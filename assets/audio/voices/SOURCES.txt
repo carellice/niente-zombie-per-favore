@@ -1,0 +1,29 @@
+ACTIVE ZOMBIE VOCALS — revision 2026-10-23
+
+AntumDeluge — Undead Moans (CC0-1.0)
+https://opengameart.org/content/undead-moans
+Original download: https://opengameart.org/sites/default/files/undead-moans.zip
+Sources: undead-1.ogg, undead-2.ogg, undead-4.ogg
+The author identifies these as recordings of their own performed undead moans.
+Original CC0 legal text is preserved in LICENSE-CC0.txt.
+
+ArcadeParty — Zombie / Skeleton / Monster Voice Effects (CC0-1.0)
+https://opengameart.org/content/zombie-skeleton-monster-voice-effects
+Original download:
+https://opengameart.org/sites/default/files/Voice%20Effects%20Zombie-Skeleton-Monster%20Human%20Male.zip
+Sources: zombieYell3.wav, zombieYell5.wav, zombieYell7.wav,
+zombieYell4.wav, zombieYell8.wav, zombieYell10.wav.
+No human voice sample from that archive is used.
+
+Both original uploader pages explicitly list Creative Commons Zero (CC0).
+Verified and downloaded 2026-10-23.
+https://creativecommons.org/publicdomain/zero/1.0/
+CC0 allows adaptation and redistribution, including commercial distribution.
+Credits are retained voluntarily. No affiliation or endorsement is implied.
+
+Survivor voices are DISABLED. Legacy civilian_*.wav files are development-only,
+excluded from export, and are never loaded by the active voice bank.
+
+Every active zombie excerpt, processing description and SHA-256 is listed in
+manifest.json. Original source download hashes: ../revision-sources.json.
+Regenerate with tools/prepare_audio_revision.py; see docs/CHARACTER_VOICES.md.

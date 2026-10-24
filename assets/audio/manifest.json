@@ -1,0 +1,202 @@
+{
+  "shot_pistol.wav": {
+    "source": "The Free Firearm Sound Library / 1911/A_42P.wav",
+    "processing": "First isolated report; mono 44.1 kHz; 65 Hz\u201310.5 kHz; echo-tail attenuation; start aligned, end faded, DC removed and peak gain adjusted. No synthetic gun tone.",
+    "duration_seconds": 0.68,
+    "sample_rate": 44100,
+    "peak_dbfs": -2.85,
+    "rms_dbfs": -28.53,
+    "sha256": "a84af0b3b13ab23bb3a0c48e2b58a25d0f6c6a1251ad98169e8dce9906693403"
+  },
+  "shot_shotgun.wav": {
+    "source": "The Free Firearm Sound Library / Model 12/K_17P.wav",
+    "processing": "First isolated report; mono 44.1 kHz; 65 Hz\u201310.5 kHz; echo-tail attenuation; start aligned, end faded, DC removed and peak gain adjusted. No synthetic gun tone.",
+    "duration_seconds": 0.95,
+    "sample_rate": 44100,
+    "peak_dbfs": -1.94,
+    "rms_dbfs": -28.45,
+    "sha256": "6c1bb0cf8d19e2e338bd2892c0f5bebe8b0b276a5eb79f4ebd70315fd3006e41"
+  },
+  "shot_sniper.wav": {
+    "source": "The Free Firearm Sound Library / Mosin Nagant/M_21P.wav",
+    "processing": "First isolated report; mono 44.1 kHz; 65 Hz\u201310.5 kHz; echo-tail attenuation; start aligned, end faded, DC removed and peak gain adjusted. No synthetic gun tone.",
+    "duration_seconds": 1.15,
+    "sample_rate": 44100,
+    "peak_dbfs": -2.05,
+    "rms_dbfs": -29.76,
+    "sha256": "0ed498c3318282eb28666c4acc6339986d715bf3baf2d59ede63be3d188c4b16"
+  },
+  "ui_tap.wav": {
+    "source": "Kenney Impact Sounds / impactWood_light_001.ogg",
+    "processing": "Trimmed, high-pass/low-pass EQ, mono, soft fades, gain reduction; some events layer two quiet foley hits. Warning/bell pitch lowered.",
+    "duration_seconds": 0.16,
+    "sample_rate": 44100,
+    "peak_dbfs": -14.89,
+    "rms_dbfs": -32.62,
+    "sha256": "858e3240d6018d3ec97d71714dba7847455a00f0d611a22f938bde158f103951"
+  },
+  "cash.wav": {
+    "source": "Kenney Impact Sounds / impactMetal_light_000.ogg",
+    "processing": "Trimmed, high-pass/low-pass EQ, mono, soft fades, gain reduction; some events layer two quiet foley hits. Warning/bell pitch lowered.",
+    "duration_seconds": 0.252,
+    "sample_rate": 44100,
+    "peak_dbfs": -13.98,
+    "rms_dbfs": -30.33,
+    "sha256": "a53116ecd1112d84b038b5bce532b501086bf1cf140bc1a5548583be714c4b69"
+  },
+  "build.wav": {
+    "source": "Kenney Impact Sounds / impactPlank_medium_000.ogg + impactWood_light_001.ogg",
+    "processing": "Trimmed, high-pass/low-pass EQ, mono, soft fades, gain reduction; some events layer two quiet foley hits. Warning/bell pitch lowered.",
+    "duration_seconds": 0.35,
+    "sample_rate": 44100,
+    "peak_dbfs": -11.7,
+    "rms_dbfs": -30.62,
+    "sha256": "0fd4f0cd258f23c5df4f42dea170dd44f88f048b93da34cfb3a0f01991774545"
+  },
+  "ready.wav": {
+    "source": "Kenney Impact Sounds / impactBell_heavy_000.ogg",
+    "processing": "Trimmed, high-pass/low-pass EQ, mono, soft fades, gain reduction; some events layer two quiet foley hits. Warning/bell pitch lowered.",
+    "duration_seconds": 0.65,
+    "sample_rate": 44100,
+    "peak_dbfs": -15.39,
+    "rms_dbfs": -33.19,
+    "sha256": "8cb653beedcb76a9c44e6e6d4854656bb2ce525337bc376e9e0fcd75dd53ce89"
+  },
+  "reward.wav": {
+    "source": "Kenney Impact Sounds / impactBell_heavy_000.ogg + impactMetal_light_000.ogg",
+    "processing": "Trimmed, high-pass/low-pass EQ, mono, soft fades, gain reduction; some events layer two quiet foley hits. Warning/bell pitch lowered.",
+    "duration_seconds": 0.65,
+    "sample_rate": 44100,
+    "peak_dbfs": -13.98,
+    "rms_dbfs": -31.03,
+    "sha256": "ffcfa25abf3873341e3dd721c787192c52792205cfe4840e359ccf1561e4322a"
+  },
+  "visitor.wav": {
+    "source": "Kenney Impact Sounds / impactWood_light_001.ogg",
+    "processing": "Trimmed, high-pass/low-pass EQ, mono, soft fades, gain reduction; some events layer two quiet foley hits. Warning/bell pitch lowered.",
+    "duration_seconds": 0.32,
+    "sample_rate": 44100,
+    "peak_dbfs": -12.77,
+    "rms_dbfs": -31.29,
+    "sha256": "2678cb44db76ca41c6f2fca0a2a4b7b01ae92d6d912b0975591db61540f837de"
+  },
+  "alarm.wav": {
+    "source": "Kenney Impact Sounds / impactBell_heavy_001.ogg",
+    "processing": "Trimmed, high-pass/low-pass EQ, mono, soft fades, gain reduction; some events layer two quiet foley hits. Warning/bell pitch lowered.",
+    "duration_seconds": 1.02,
+    "sample_rate": 44100,
+    "peak_dbfs": -12.4,
+    "rms_dbfs": -28.65,
+    "sha256": "fb60222893a56a5f50c6b107aff91ba0b47265a85b0a39cb5ffa00fea394924e"
+  },
+  "breach.wav": {
+    "source": "Kenney Impact Sounds / impactPlank_medium_000.ogg",
+    "processing": "Trimmed, high-pass/low-pass EQ, mono, soft fades, gain reduction; some events layer two quiet foley hits. Warning/bell pitch lowered.",
+    "duration_seconds": 0.35,
+    "sample_rate": 44100,
+    "peak_dbfs": -10.17,
+    "rms_dbfs": -29.69,
+    "sha256": "20b992310247544786b41e56de62d9049408ca4aa5dec5c295fd28e89504a2a8"
+  },
+  "impact.wav": {
+    "source": "Kenney Impact Sounds / impactSoft_medium_000.ogg",
+    "processing": "Trimmed, high-pass/low-pass EQ, mono, soft fades, gain reduction; some events layer two quiet foley hits. Warning/bell pitch lowered.",
+    "duration_seconds": 0.1151,
+    "sample_rate": 44100,
+    "peak_dbfs": -17.72,
+    "rms_dbfs": -31.56,
+    "sha256": "753e8faf956665535ee28a74e6b633340850f2c3eeade56d3c84456d58525f3a"
+  },
+  "reject.wav": {
+    "source": "Kenney Impact Sounds / impactWood_light_003.ogg",
+    "processing": "Trimmed, high-pass/low-pass EQ, mono, soft fades, gain reduction; some events layer two quiet foley hits. Warning/bell pitch lowered.",
+    "duration_seconds": 0.17,
+    "sample_rate": 44100,
+    "peak_dbfs": -14.89,
+    "rms_dbfs": -30.97,
+    "sha256": "84d0085ad099dad4211fd6faf16e250c0fc2ff6d94e612c4fc73b08bcbdecf30"
+  },
+  "expedition.wav": {
+    "source": "Kenney Impact Sounds / impactSoft_medium_000.ogg + impactWood_light_001.ogg",
+    "processing": "Trimmed, high-pass/low-pass EQ, mono, soft fades, gain reduction; some events layer two quiet foley hits. Warning/bell pitch lowered.",
+    "duration_seconds": 0.3,
+    "sample_rate": 44100,
+    "peak_dbfs": -13.56,
+    "rms_dbfs": -30.92,
+    "sha256": "ff6fbe547475cbd87f2ecc8cc16ad1c97260fc8b2ec8d7decf69b9321bd2bcc8"
+  },
+  "shelter_ambience.ogg": {
+    "source": "Original project synthesis: tools/prepare_audio.py",
+    "processing": "40-second periodic, gently evolving warm C6/9 pad with filtered cyclical wind; stereo Vorbis; seamless loop.",
+    "duration_seconds": 40.0,
+    "sample_rate": 44100,
+    "peak_dbfs": -12.04,
+    "rms_dbfs": -23.63,
+    "sha256": "d390b51bb5a2a4dbaaf486be51f9564037141a748e724ec5978505509d0db1b7"
+  },
+  "shot_smg.wav": {
+    "source": "Ben Jaszczak et al. / The Free Firearm Sound Library / Carl Gustav M45/G_20P.wav (CC0-1.0)",
+    "source_url": "https://opengameart.org/content/the-free-firearm-sound-library",
+    "license": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "processing": "First isolated submachine gun report; mono 44.1kHz; 65Hz-10kHz EQ; 150ms tail for rapid fire; fades and gain.",
+    "duration_seconds": 0.15,
+    "sample_rate": 44100,
+    "peak_dbfs": -2.85,
+    "rms_dbfs": -24.96,
+    "sha256": "d2cb7d35d4b726abd850117dd7db5454e03bf4ab99909a3f3f1b6cbd3cb98ad9"
+  },
+  "reload_shotgun.wav": {
+    "source": "SpringySpringo / Gun reload sounds / shotguncock_0.wav (CC0-1.0)",
+    "source_url": "https://opengameart.org/content/gun-reload-sounds",
+    "license": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "processing": "Recorded airsoft pump action; trim, EQ, mono, DC removal and fades.",
+    "duration_seconds": 0.3837,
+    "sample_rate": 44100,
+    "peak_dbfs": -9.9,
+    "rms_dbfs": -21.94,
+    "sha256": "8d9e8e8eccaa368eb86e5b2f31c9b2a0f74ab1a3415e91314794907643301cb5"
+  },
+  "reload_sniper.wav": {
+    "source": "Brian MacIntosh (BMacZero) / Gun Reload Sound Effects / singlebullet1.wav + clipload2.wav (CC0-1.0)",
+    "source_url": "https://opengameart.org/content/gun-reload-sound-effects",
+    "license": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "processing": "Recorded cartridge and metal latch sequence; spaced at 0/360ms; crest-factor reduction, mono, EQ, DC removal, fades and gain.",
+    "duration_seconds": 0.6,
+    "sample_rate": 44100,
+    "peak_dbfs": -9.37,
+    "rms_dbfs": -27.6,
+    "sha256": "18e7ec4d0102a237d8a51e40443a2799270b1f2f5df1ac6049a4db3508fed577"
+  },
+  "reload_smg.wav": {
+    "source": "SpringySpringo / Gun reload sounds / assaultriflereload1_0.wav (CC0-1.0)",
+    "source_url": "https://opengameart.org/content/gun-reload-sounds",
+    "license": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "processing": "65ms recorded mechanism excerpt; mono, EQ, DC removal, soft edges and lower gain for automatic cycling.",
+    "duration_seconds": 0.065,
+    "sample_rate": 44100,
+    "peak_dbfs": -13.98,
+    "rms_dbfs": -27.66,
+    "sha256": "a0ff286bfe912530f878a351a492eb50be5339bf465a75a69fecf75d3151f983"
+  },
+  "ui_click.wav": {
+    "source": "Kenney UI SFX Set / click2.ogg + Kenney Impact Sounds / impactSoft_medium_000.ogg",
+    "source_url": "https://kenney.nl/assets/ui-audio",
+    "additional_source_url": "https://kenney.nl/assets/impact-sounds",
+    "license": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "source_sha256": {
+      "kenney_ui/Audio/click2.ogg": "c394b46bc6737f7f7edfbfa3031ce621b7a43d498d456d6198364eee9cd3e306",
+      "kenney_impact/Audio/impactSoft_medium_000.ogg": "7d3ba0bb5e60a11b5d3e558c141303dcf494256675fbf753c0d252d2cf0481e3"
+    },
+    "processing": "Mono 44.1 kHz; 110 Hz high-pass; UI/soft layers low-passed at 2.8/1.4 kHz; UI speed 0.86; layers 0.72/0.36 at 0/3 ms; gentle tanh crest reduction; 0.8/25 ms fades; -12 dBFS peak. No beep or echo.",
+    "duration_seconds": 0.11,
+    "sample_rate": 44100,
+    "peak_dbfs": -12.0,
+    "rms_dbfs": -23.73,
+    "sha256": "ea0c0093bcc92e28170499a12cb957722b18f494dc737bb0edcea89a7edbff6c"
+  }
+}

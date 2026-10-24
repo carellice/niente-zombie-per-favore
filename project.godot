@@ -1,0 +1,49 @@
+; Niente Zombie Per Favore! - Godot 4.5
+config_version=5
+
+[application]
+config/name="Niente Zombie Per Favore!"
+config/version="0.4.1.30"
+config/description="Un piccolo rifugio. Una grande voglia di ricominciare."
+run/main_scene="res://loading.tscn"
+config/features=PackedStringArray("4.5", "GL Compatibility")
+config/icon="res://assets/icon.png"
+boot_splash/bg_color=Color(0.09019608, 0.21568628, 0.20784314, 1)
+boot_splash/image="res://assets/android/icon_foreground.png"
+boot_splash/fullsize=true
+boot_splash/use_filter=true
+
+[autoload]
+DeviceLayout="*res://scripts/device_layout.gd"
+Preferences="*res://scripts/preferences.gd"
+Game="*res://scripts/game_state.gd"
+
+[display]
+window/size/viewport_width=1440
+window/size/viewport_height=900
+window/size/window_width_override=1280
+window/size/window_height_override=800
+window/size/min_width=960
+window/size/min_height=600
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation=4
+
+[rendering]
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/default_filters/use_nearest_mipmap_filter=false
+textures/vram_compression/import_etc2_astc=true
+environment/defaults/default_clear_color=Color(0.095, 0.14, 0.15, 1)
+
+[audio]
+driver/enable_input=false
+
+[input_devices]
+pointing/emulate_mouse_from_touch=true
+
+[debug]
+file_logging/enable_file_logging=false
+
+[filesystem]
+import/blender/enabled=false

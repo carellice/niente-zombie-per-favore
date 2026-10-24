@@ -1,0 +1,9 @@
+# Strada dipinta
+
+Asset finale: `assets/art/road-painted.png`, 2172 × 724, opaco. Creato con `image_gen.imagegen` integrato e copiato senza modifiche ai pixel. Il rendering alterna le tessere specchiate per raccordare i bordi e usa una luce più fredda all'esterno, più calda dentro il rifugio. Il basamento del cancello mantiene una propria ombra di contatto.
+
+## Prompt finale
+
+```text
+Use case: stylized-concept. Asset type: tileable horizontal 2D game street strip, exactly 1536x512 landscape. A beautiful hand-painted cozy post-apocalyptic cartoon street SURFACE ONLY viewed from slight elevated side-scroller angle, orthographic no perspective vanishing. Across the full top edge a slim continuous raised warm grey cobblestone curb and small worn sidewalk slabs, moss tufts in cracks, a few tiny daisies and dry weeds. Below it a wide detailed muted blue-grey asphalt road across the entire remaining 80% image height, naturally cracked, patched darker asphalt, subtle fine grit, irregular worn cream dashed center markings in one horizontal row around 70% image height. Puddles with soft sunset reflections and scattered tiny leaves, weathered but charming. Artwork should have painterly sculpted tactile toy-like surfaces and fine colored contour like a high quality handpainted mobile village management game. Warm sunset ambient light from right, slate asphalt, sandy curb, olive moss, balanced rich details visible at game scale without excessive clutter. Must tile horizontally perfectly: identical road and curb elevation at left and right edges, no large props crossing edges. No buildings, no sky, no trees, no people, no cars, no signs, no text, no UI, no borders. Completely opaque full-bleed texture, no transparency. This is a usable game surface strip, NOT a game screenshot or landscape scene.
+```

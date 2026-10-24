@@ -1,0 +1,632 @@
+{
+  "schema_version": 1,
+  "recordings_supplied_by": "Project owner",
+  "permission": "Owner states recordings are freely distributable and authorizes use in this game.",
+  "license_identifier": null,
+  "license_note": "No license identifier, creator name or source URL was supplied or embedded; do not label these recordings CC0.",
+  "generator": "tools/prepare_user_audio.py",
+  "sample_rate": 44100,
+  "sources": {
+    "pistol": {
+      "path": "suoni/pistola.mp3",
+      "sha256": "9131f099b26a4884ccaa75e9ade975030dfa9d530054640c60f1e6c6e803503b",
+      "bytes": 12624,
+      "probe": {
+        "streams": [
+          {
+            "index": 0,
+            "codec_name": "mp3",
+            "codec_long_name": "MP3 (MPEG audio layer 3)",
+            "codec_type": "audio",
+            "codec_tag_string": "[0][0][0][0]",
+            "codec_tag": "0x0000",
+            "mime_codec_string": "mp4a.40.34",
+            "sample_fmt": "fltp",
+            "sample_rate": "48000",
+            "channels": 2,
+            "channel_layout": "stereo",
+            "bits_per_sample": 0,
+            "initial_padding": 0,
+            "r_frame_rate": "0/0",
+            "avg_frame_rate": "0/0",
+            "time_base": "1/14112000",
+            "start_pts": 324870,
+            "start_time": "0.023021",
+            "duration_ts": 11107614,
+            "duration": "0.787104",
+            "bit_rate": "123765",
+            "disposition": {
+              "default": 0,
+              "dub": 0,
+              "original": 0,
+              "comment": 0,
+              "lyrics": 0,
+              "karaoke": 0,
+              "forced": 0,
+              "hearing_impaired": 0,
+              "visual_impaired": 0,
+              "clean_effects": 0,
+              "attached_pic": 0,
+              "timed_thumbnails": 0,
+              "non_diegetic": 0,
+              "captions": 0,
+              "descriptions": 0,
+              "metadata": 0,
+              "dependent": 0,
+              "still_image": 0,
+              "multilayer": 0
+            },
+            "tags": {
+              "encoder": "LAME3.100"
+            }
+          }
+        ],
+        "format": {
+          "nb_streams": 1,
+          "nb_programs": 0,
+          "nb_stream_groups": 0,
+          "format_name": "mp3",
+          "format_long_name": "MP2/3 (MPEG audio layer 2/3)",
+          "start_time": "0.023021",
+          "duration": "0.787104",
+          "size": "12624",
+          "bit_rate": "128308",
+          "probe_score": 52
+        }
+      },
+      "decoded_mono": {
+        "duration_seconds": 0.78712,
+        "peak_dbfs": -7.263,
+        "rms_dbfs": -24.301
+      },
+      "decoded_samples_above_full_scale": 0
+    },
+    "shotgun": {
+      "path": "suoni/fucile a pompa.mp3",
+      "sha256": "b98240d7e8ca86dddc3191ee97727ffcd254c7eebaef2e890849ca5c82912383",
+      "bytes": 37920,
+      "probe": {
+        "streams": [
+          {
+            "index": 0,
+            "codec_name": "mp3",
+            "codec_long_name": "MP3 (MPEG audio layer 3)",
+            "codec_type": "audio",
+            "codec_tag_string": "[0][0][0][0]",
+            "codec_tag": "0x0000",
+            "mime_codec_string": "mp4a.40.34",
+            "sample_fmt": "fltp",
+            "sample_rate": "24000",
+            "channels": 2,
+            "channel_layout": "stereo",
+            "bits_per_sample": 0,
+            "initial_padding": 0,
+            "r_frame_rate": "0/0",
+            "avg_frame_rate": "0/0",
+            "time_base": "1/14112000",
+            "start_pts": 0,
+            "start_time": "0.000000",
+            "duration_ts": 26756352,
+            "duration": "1.896000",
+            "bit_rate": "160000",
+            "disposition": {
+              "default": 0,
+              "dub": 0,
+              "original": 0,
+              "comment": 0,
+              "lyrics": 0,
+              "karaoke": 0,
+              "forced": 0,
+              "hearing_impaired": 0,
+              "visual_impaired": 0,
+              "clean_effects": 0,
+              "attached_pic": 0,
+              "timed_thumbnails": 0,
+              "non_diegetic": 0,
+              "captions": 0,
+              "descriptions": 0,
+              "metadata": 0,
+              "dependent": 0,
+              "still_image": 0,
+              "multilayer": 0
+            }
+          }
+        ],
+        "format": {
+          "nb_streams": 1,
+          "nb_programs": 0,
+          "nb_stream_groups": 0,
+          "format_name": "mp3",
+          "format_long_name": "MP2/3 (MPEG audio layer 2/3)",
+          "start_time": "0.000000",
+          "duration": "1.896000",
+          "size": "37920",
+          "bit_rate": "160000",
+          "probe_score": 52
+        }
+      },
+      "decoded_mono": {
+        "duration_seconds": 1.896009,
+        "peak_dbfs": 3.129,
+        "rms_dbfs": -12.896
+      },
+      "decoded_samples_above_full_scale": 782
+    },
+    "sniper": {
+      "path": "suoni/fucile di precisione.mp3",
+      "sha256": "05be5a0b7becc38fa179dfac13975fe9e637b6893d51d8df6818b23be7b69c22",
+      "bytes": 56160,
+      "probe": {
+        "streams": [
+          {
+            "index": 0,
+            "codec_name": "mp3",
+            "codec_long_name": "MP3 (MPEG audio layer 3)",
+            "codec_type": "audio",
+            "codec_tag_string": "[0][0][0][0]",
+            "codec_tag": "0x0000",
+            "mime_codec_string": "mp4a.40.34",
+            "sample_fmt": "fltp",
+            "sample_rate": "24000",
+            "channels": 2,
+            "channel_layout": "stereo",
+            "bits_per_sample": 0,
+            "initial_padding": 0,
+            "r_frame_rate": "0/0",
+            "avg_frame_rate": "0/0",
+            "time_base": "1/14112000",
+            "start_pts": 0,
+            "start_time": "0.000000",
+            "duration_ts": 39626496,
+            "duration": "2.808000",
+            "bit_rate": "160000",
+            "disposition": {
+              "default": 0,
+              "dub": 0,
+              "original": 0,
+              "comment": 0,
+              "lyrics": 0,
+              "karaoke": 0,
+              "forced": 0,
+              "hearing_impaired": 0,
+              "visual_impaired": 0,
+              "clean_effects": 0,
+              "attached_pic": 0,
+              "timed_thumbnails": 0,
+              "non_diegetic": 0,
+              "captions": 0,
+              "descriptions": 0,
+              "metadata": 0,
+              "dependent": 0,
+              "still_image": 0,
+              "multilayer": 0
+            }
+          }
+        ],
+        "format": {
+          "nb_streams": 1,
+          "nb_programs": 0,
+          "nb_stream_groups": 0,
+          "format_name": "mp3",
+          "format_long_name": "MP2/3 (MPEG audio layer 2/3)",
+          "start_time": "0.000000",
+          "duration": "2.808000",
+          "size": "56160",
+          "bit_rate": "160000",
+          "probe_score": 52
+        }
+      },
+      "decoded_mono": {
+        "duration_seconds": 2.808005,
+        "peak_dbfs": 5.578,
+        "rms_dbfs": -14.688
+      },
+      "decoded_samples_above_full_scale": 1676
+    },
+    "smg": {
+      "path": "suoni/mitragliatore.mp3",
+      "sha256": "6d031df9a88076689fc05b100a8dafa95f8e7ab03b3ec5198a728e4009e663cc",
+      "bytes": 5616,
+      "probe": {
+        "streams": [
+          {
+            "index": 0,
+            "codec_name": "mp3",
+            "codec_long_name": "MP3 (MPEG audio layer 3)",
+            "codec_type": "audio",
+            "codec_tag_string": "[0][0][0][0]",
+            "codec_tag": "0x0000",
+            "mime_codec_string": "mp4a.40.34",
+            "sample_fmt": "fltp",
+            "sample_rate": "48000",
+            "channels": 2,
+            "channel_layout": "stereo",
+            "bits_per_sample": 0,
+            "initial_padding": 0,
+            "r_frame_rate": "0/0",
+            "avg_frame_rate": "0/0",
+            "time_base": "1/14112000",
+            "start_pts": 324870,
+            "start_time": "0.023021",
+            "duration_ts": 3438330,
+            "duration": "0.243646",
+            "bit_rate": "156000",
+            "disposition": {
+              "default": 0,
+              "dub": 0,
+              "original": 0,
+              "comment": 0,
+              "lyrics": 0,
+              "karaoke": 0,
+              "forced": 0,
+              "hearing_impaired": 0,
+              "visual_impaired": 0,
+              "clean_effects": 0,
+              "attached_pic": 0,
+              "timed_thumbnails": 0,
+              "non_diegetic": 0,
+              "captions": 0,
+              "descriptions": 0,
+              "metadata": 0,
+              "dependent": 0,
+              "still_image": 0,
+              "multilayer": 0
+            },
+            "tags": {
+              "encoder": "LAME3.100"
+            }
+          }
+        ],
+        "format": {
+          "nb_streams": 1,
+          "nb_programs": 0,
+          "nb_stream_groups": 0,
+          "format_name": "mp3",
+          "format_long_name": "MP2/3 (MPEG audio layer 2/3)",
+          "start_time": "0.023021",
+          "duration": "0.243646",
+          "size": "5616",
+          "bit_rate": "184398",
+          "probe_score": 52
+        }
+      },
+      "decoded_mono": {
+        "duration_seconds": 0.243651,
+        "peak_dbfs": 3.197,
+        "rms_dbfs": -11.173
+      },
+      "decoded_samples_above_full_scale": 45
+    },
+    "reload": {
+      "path": "suoni/ricarica arma.mp3",
+      "sha256": "c1acdf3043f54f3d828674f071ae23031c7d837e64cfdde3e5beda41f46e3943",
+      "bytes": 48384,
+      "probe": {
+        "streams": [
+          {
+            "index": 0,
+            "codec_name": "mp3",
+            "codec_long_name": "MP3 (MPEG audio layer 3)",
+            "codec_type": "audio",
+            "codec_tag_string": "[0][0][0][0]",
+            "codec_tag": "0x0000",
+            "mime_codec_string": "mp4a.40.34",
+            "sample_fmt": "fltp",
+            "sample_rate": "48000",
+            "channels": 2,
+            "channel_layout": "stereo",
+            "bits_per_sample": 0,
+            "initial_padding": 0,
+            "r_frame_rate": "0/0",
+            "avg_frame_rate": "0/0",
+            "time_base": "1/14112000",
+            "start_pts": 0,
+            "start_time": "0.000000",
+            "duration_ts": 21337344,
+            "duration": "1.512000",
+            "bit_rate": "256000",
+            "disposition": {
+              "default": 0,
+              "dub": 0,
+              "original": 0,
+              "comment": 0,
+              "lyrics": 0,
+              "karaoke": 0,
+              "forced": 0,
+              "hearing_impaired": 0,
+              "visual_impaired": 0,
+              "clean_effects": 0,
+              "attached_pic": 0,
+              "timed_thumbnails": 0,
+              "non_diegetic": 0,
+              "captions": 0,
+              "descriptions": 0,
+              "metadata": 0,
+              "dependent": 0,
+              "still_image": 0,
+              "multilayer": 0
+            }
+          }
+        ],
+        "format": {
+          "nb_streams": 1,
+          "nb_programs": 0,
+          "nb_stream_groups": 0,
+          "format_name": "mp3",
+          "format_long_name": "MP2/3 (MPEG audio layer 2/3)",
+          "start_time": "0.000000",
+          "duration": "1.512000",
+          "size": "48384",
+          "bit_rate": "256000",
+          "probe_score": 52
+        }
+      },
+      "decoded_mono": {
+        "duration_seconds": 1.512018,
+        "peak_dbfs": 3.957,
+        "rms_dbfs": -16.766
+      },
+      "decoded_samples_above_full_scale": 370
+    },
+    "zombie": {
+      "path": "suoni/zombie.mp3",
+      "sha256": "a6ce0153fdd410eaf77e2e559fea4affbd20c876ad93e4663c64b09a1cd2bbfd",
+      "bytes": 3073671,
+      "probe": {
+        "streams": [
+          {
+            "index": 0,
+            "codec_name": "mp3",
+            "codec_long_name": "MP3 (MPEG audio layer 3)",
+            "codec_type": "audio",
+            "codec_tag_string": "[0][0][0][0]",
+            "codec_tag": "0x0000",
+            "mime_codec_string": "mp4a.40.34",
+            "sample_fmt": "fltp",
+            "sample_rate": "44100",
+            "channels": 2,
+            "channel_layout": "stereo",
+            "bits_per_sample": 0,
+            "initial_padding": 0,
+            "r_frame_rate": "0/0",
+            "avg_frame_rate": "0/0",
+            "time_base": "1/14112000",
+            "start_pts": 0,
+            "start_time": "0.000000",
+            "duration_ts": 1355488911,
+            "duration": "96.052219",
+            "bit_rate": "256000",
+            "disposition": {
+              "default": 0,
+              "dub": 0,
+              "original": 0,
+              "comment": 0,
+              "lyrics": 0,
+              "karaoke": 0,
+              "forced": 0,
+              "hearing_impaired": 0,
+              "visual_impaired": 0,
+              "clean_effects": 0,
+              "attached_pic": 0,
+              "timed_thumbnails": 0,
+              "non_diegetic": 0,
+              "captions": 0,
+              "descriptions": 0,
+              "metadata": 0,
+              "dependent": 0,
+              "still_image": 0,
+              "multilayer": 0
+            }
+          }
+        ],
+        "format": {
+          "nb_streams": 1,
+          "nb_programs": 0,
+          "nb_stream_groups": 0,
+          "format_name": "mp3",
+          "format_long_name": "MP2/3 (MPEG audio layer 2/3)",
+          "start_time": "0.000000",
+          "duration": "96.052219",
+          "size": "3073671",
+          "bit_rate": "255999",
+          "probe_score": 52
+        }
+      },
+      "decoded_mono": {
+        "duration_seconds": 96.052245,
+        "peak_dbfs": 3.513,
+        "rms_dbfs": -17.811
+      },
+      "decoded_samples_above_full_scale": 2474
+    }
+  },
+  "assets": {
+    "shot_pistol.wav": {
+      "source_key": "pistol",
+      "sha256": "0667bfe101cf990255fa02f378fb3d85a34d16eca74e0fb76ceed3747dd46269",
+      "format": "PCM signed 16-bit WAV",
+      "sample_rate": 44100,
+      "channels": 1,
+      "kind": "event",
+      "loop": false,
+      "processing": {
+        "source_region_seconds": [
+          0.014376,
+          0.571791
+        ],
+        "operation": "Mono mix; remove leading/trailing near silence only; DC removal; 0.3ms attack and 35ms tail fades; normalize floating-point peak to 0.72 before PCM quantization."
+      },
+      "duration_seconds": 0.557415,
+      "peak_dbfs": -2.853,
+      "rms_dbfs": -18.433
+    },
+    "shot_shotgun.wav": {
+      "source_key": "shotgun",
+      "sha256": "822afc931674ec25ac79d8a9c78feb11e2006cea73204ebbf47573407e58aac4",
+      "format": "PCM signed 16-bit WAV",
+      "sample_rate": 44100,
+      "channels": 1,
+      "kind": "event",
+      "loop": false,
+      "processing": {
+        "source_region_seconds": [
+          0.044036,
+          1.321882
+        ],
+        "operation": "Mono mix; remove leading/trailing near silence only; DC removal; 0.3ms attack and 35ms tail fades; normalize floating-point peak to 0.72 before PCM quantization."
+      },
+      "duration_seconds": 1.277846,
+      "peak_dbfs": -2.853,
+      "rms_dbfs": -17.105
+    },
+    "shot_sniper.wav": {
+      "source_key": "sniper",
+      "sha256": "f51aae0779722adab599d39aa86c7f75cba1cce6fe0b8681a01a90b6723f2fbf",
+      "format": "PCM signed 16-bit WAV",
+      "sample_rate": 44100,
+      "channels": 1,
+      "kind": "event",
+      "loop": false,
+      "processing": {
+        "source_region_seconds": [
+          0.013107,
+          1.372494
+        ],
+        "operation": "Mono mix; remove leading/trailing near silence only; DC removal; 0.3ms attack and 35ms tail fades; normalize floating-point peak to 0.72 before PCM quantization."
+      },
+      "duration_seconds": 1.359388,
+      "peak_dbfs": -2.853,
+      "rms_dbfs": -19.962
+    },
+    "shot_smg.wav": {
+      "source_key": "smg",
+      "sha256": "26bbaaded9931ad47c905cfe98efd71b6f99c1a4f4e282dd671d8d5e83ceaee5",
+      "format": "PCM signed 16-bit WAV",
+      "sample_rate": 44100,
+      "channels": 1,
+      "kind": "event",
+      "loop": false,
+      "processing": {
+        "source_region_seconds": [
+          0.074,
+          0.154
+        ],
+        "operation": "One complete recorded firing cycle from middle of supplied burst; mono; DC removal; 1ms attack and 13ms release; floating-point peak 0.65."
+      },
+      "duration_seconds": 0.08,
+      "peak_dbfs": -3.742,
+      "rms_dbfs": -16.676
+    },
+    "reload.wav": {
+      "source_key": "reload",
+      "sha256": "345413fac42f2c50d37ad57191d3bd53e925ecf689d4561d71656253b0d17f98",
+      "format": "PCM signed 16-bit WAV",
+      "sample_rate": 44100,
+      "channels": 1,
+      "kind": "event",
+      "loop": false,
+      "processing": {
+        "source_region_seconds": [
+          0.024943,
+          1.257596
+        ],
+        "operation": "Full original mechanical sequence, mono, silence trim, DC removal, edge fades and floating-point peak 0.48."
+      },
+      "duration_seconds": 1.232653,
+      "peak_dbfs": -6.375,
+      "rms_dbfs": -26.212
+    },
+    "reload_sniper.wav": {
+      "source_key": "reload",
+      "sha256": "6a5fa7e9aaba17e3d6d5be8ffbc75f411dc67fa9d3e163a2a4ea270388d88d9d",
+      "format": "PCM signed 16-bit WAV",
+      "sample_rate": 44100,
+      "channels": 1,
+      "kind": "event",
+      "loop": false,
+      "processing": {
+        "source_regions_seconds": [
+          [
+            0.265,
+            0.45
+          ],
+          [
+            0.89,
+            1.235
+          ]
+        ],
+        "gap_seconds": 0.045,
+        "operation": "Two original mechanism groups, long internal pause shortened to 45ms, pitch and event speed preserved; edge fades; floating-point peak 0.42."
+      },
+      "duration_seconds": 0.575011,
+      "peak_dbfs": -7.535,
+      "rms_dbfs": -23.873
+    },
+    "reload_shotgun.wav": {
+      "source_key": "reload",
+      "sha256": "f831d08a04ef98f32aa109072da6afa53ad13c1e10ccf63d6b0167bdb38a3eba",
+      "format": "PCM signed 16-bit WAV",
+      "sample_rate": 44100,
+      "channels": 1,
+      "kind": "event",
+      "loop": false,
+      "processing": {
+        "source_regions_seconds": [
+          [
+            0.265,
+            0.45
+          ],
+          [
+            0.89,
+            1.235
+          ]
+        ],
+        "gap_seconds": 0.045,
+        "tempo_factor": 1.5,
+        "operation": "Same two mechanism groups, pause shortened and atempo 1.50 without changing pitch; fades; floating-point peak 0.40."
+      },
+      "duration_seconds": 0.38263,
+      "peak_dbfs": -7.959,
+      "rms_dbfs": -24.051
+    },
+    "reload_smg.wav": {
+      "source_key": "reload",
+      "sha256": "a5dfbb173efb1b2175170119325dde9a2bb78093de33505051300414c01410f7",
+      "format": "PCM signed 16-bit WAV",
+      "sample_rate": 44100,
+      "channels": 1,
+      "kind": "event",
+      "loop": false,
+      "processing": {
+        "source_region_seconds": [
+          0.943,
+          1.008
+        ],
+        "operation": "65ms recorded latch excerpt; DC removal; edge fades; quieter 0.18 floating-point peak for automatic mechanism."
+      },
+      "duration_seconds": 0.065011,
+      "peak_dbfs": -14.895,
+      "rms_dbfs": -31.205
+    },
+    "zombie.ogg": {
+      "source_key": "zombie",
+      "sha256": "05737e59e614058ce5a0198963e796af27b12a8e88b3c8373190980d4eb3dc7d",
+      "format": "Ogg Vorbis q5",
+      "sample_rate": 44100,
+      "channels": 1,
+      "kind": "streaming_soundscape",
+      "loop": false,
+      "runtime_crossfade_seconds": 2.5,
+      "processing": {
+        "source_region_seconds": [
+          0,
+          92.724603
+        ],
+        "operation": "Entire original performance in order; remove terminal digital silence only; mono; DC removal; tiny boundary fades; floating-point peak 0.62; Vorbis q5. No pitch, speed or vocalization changes."
+      },
+      "duration_seconds": 92.724603,
+      "peak_dbfs": -3.309,
+      "rms_dbfs": -25.425
+    }
+  }
+}

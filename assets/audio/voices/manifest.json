@@ -1,0 +1,110 @@
+{
+  "zombie_walker_01.wav": {
+    "source": "AntumDeluge / Undead Moans / undead-1.ogg (CC0-1.0)",
+    "source_url": "https://opengameart.org/content/undead-moans",
+    "license": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "processing": "Recorded performance; mono PCM 44.1kHz; 75-5700Hz EQ; pitch 0.98; tempo 1.12; moderate compression, silence trim, DC removal, fades, peak gain.",
+    "duration_seconds": 1.9508,
+    "sample_rate": 44100,
+    "peak_dbfs": -5.04,
+    "rms_dbfs": -18.17,
+    "sha256": "73c4603f3b2f07316d2e93c1f5ecce24064adfdd2443abbf089327c66e61891c"
+  },
+  "zombie_walker_02.wav": {
+    "source": "AntumDeluge / Undead Moans / undead-2.ogg (CC0-1.0)",
+    "source_url": "https://opengameart.org/content/undead-moans",
+    "license": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "processing": "Recorded performance; mono PCM 44.1kHz; 75-5700Hz EQ; pitch 1.0; tempo 1.08; moderate compression, silence trim, DC removal, fades, peak gain.",
+    "duration_seconds": 1.7268,
+    "sample_rate": 44100,
+    "peak_dbfs": -5.04,
+    "rms_dbfs": -17.33,
+    "sha256": "6e62ef33d8273cd638ef039f1545546695dd2747912b061c8831878506734387"
+  },
+  "zombie_walker_03.wav": {
+    "source": "AntumDeluge / Undead Moans / undead-4.ogg (CC0-1.0)",
+    "source_url": "https://opengameart.org/content/undead-moans",
+    "license": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "processing": "Recorded performance; mono PCM 44.1kHz; 75-5700Hz EQ; pitch 0.97; tempo 1.0; moderate compression, silence trim, DC removal, fades, peak gain.",
+    "duration_seconds": 1.414,
+    "sample_rate": 44100,
+    "peak_dbfs": -5.04,
+    "rms_dbfs": -21.29,
+    "sha256": "1f921bfaf0a26f378cb34b4696c6454f9c611a724b7b878eaf26e1f02fe5f013"
+  },
+  "zombie_runner_01.wav": {
+    "source": "ArcadeParty / Zombie Voice Effects / zombieYell3.wav (CC0-1.0)",
+    "source_url": "https://opengameart.org/content/zombie-skeleton-monster-voice-effects",
+    "license": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "processing": "Recorded performance; mono PCM 44.1kHz; 75-5700Hz EQ; pitch 1.05; tempo 1.0; moderate compression, silence trim, DC removal, fades, peak gain.",
+    "duration_seconds": 0.4073,
+    "sample_rate": 44100,
+    "peak_dbfs": -5.04,
+    "rms_dbfs": -23.9,
+    "sha256": "6503e37377b5846d079a94f73328d82fbba32c980d11591087362ebf66189336"
+  },
+  "zombie_runner_02.wav": {
+    "source": "ArcadeParty / Zombie Voice Effects / zombieYell5.wav (CC0-1.0)",
+    "source_url": "https://opengameart.org/content/zombie-skeleton-monster-voice-effects",
+    "license": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "processing": "Recorded performance; mono PCM 44.1kHz; 75-5700Hz EQ; pitch 1.05; tempo 1.0; moderate compression, silence trim, DC removal, fades, peak gain.",
+    "duration_seconds": 0.4361,
+    "sample_rate": 44100,
+    "peak_dbfs": -5.04,
+    "rms_dbfs": -23.62,
+    "sha256": "d840ef18b29bdff1d085fb003919499199e2e3bd53b7e47d075d25afff957faa"
+  },
+  "zombie_runner_03.wav": {
+    "source": "ArcadeParty / Zombie Voice Effects / zombieYell7.wav (CC0-1.0)",
+    "source_url": "https://opengameart.org/content/zombie-skeleton-monster-voice-effects",
+    "license": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "processing": "Recorded performance; mono PCM 44.1kHz; 75-5700Hz EQ; pitch 1.05; tempo 1.0; moderate compression, silence trim, DC removal, fades, peak gain.",
+    "duration_seconds": 0.3442,
+    "sample_rate": 44100,
+    "peak_dbfs": -5.04,
+    "rms_dbfs": -22.61,
+    "sha256": "07adb2dbd318e7323b96713372d5e60d253db446322a967a81acda0d940a3f9f"
+  },
+  "zombie_brute_01.wav": {
+    "source": "ArcadeParty / Zombie Voice Effects / zombieYell4.wav (CC0-1.0)",
+    "source_url": "https://opengameart.org/content/zombie-skeleton-monster-voice-effects",
+    "license": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "processing": "Recorded performance; mono PCM 44.1kHz; 75-3600Hz EQ; pitch 0.77; tempo 0.86; moderate compression, silence trim, DC removal, fades, peak gain.",
+    "duration_seconds": 0.4905,
+    "sample_rate": 44100,
+    "peak_dbfs": -5.04,
+    "rms_dbfs": -23.6,
+    "sha256": "bbf8b360832584b3e6e76064798a240c06f2f95ef655fc557a8ac08be310625f"
+  },
+  "zombie_brute_02.wav": {
+    "source": "ArcadeParty / Zombie Voice Effects / zombieYell8.wav (CC0-1.0)",
+    "source_url": "https://opengameart.org/content/zombie-skeleton-monster-voice-effects",
+    "license": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "processing": "Recorded performance; mono PCM 44.1kHz; 75-3600Hz EQ; pitch 0.77; tempo 0.86; moderate compression, silence trim, DC removal, fades, peak gain.",
+    "duration_seconds": 0.3875,
+    "sample_rate": 44100,
+    "peak_dbfs": -5.04,
+    "rms_dbfs": -21.78,
+    "sha256": "eef0b6cb1f6be6fecc403acd704bd3a42c690ee132472a36781d84b4202daf90"
+  },
+  "zombie_brute_03.wav": {
+    "source": "ArcadeParty / Zombie Voice Effects / zombieYell10.wav (CC0-1.0)",
+    "source_url": "https://opengameart.org/content/zombie-skeleton-monster-voice-effects",
+    "license": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "processing": "Recorded performance; mono PCM 44.1kHz; 75-3600Hz EQ; pitch 0.77; tempo 0.86; moderate compression, silence trim, DC removal, fades, peak gain.",
+    "duration_seconds": 0.3635,
+    "sample_rate": 44100,
+    "peak_dbfs": -5.04,
+    "rms_dbfs": -26.04,
+    "sha256": "fe22206a43417377cf38420bed9e8c782a39235e5269403a64450286f06fd01e"
+  }
+}

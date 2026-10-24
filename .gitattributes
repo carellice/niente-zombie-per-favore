@@ -1,0 +1,11 @@
+* text=auto
+*.gd text eol=lf
+*.tscn text eol=lf
+*.godot text eol=lf
+*.md text eol=lf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.png binary
+*.ogg binary
+*.wav binary
+*.mp3 binary
