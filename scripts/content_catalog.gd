@@ -8,6 +8,7 @@ const BUILDING_NAMES = {
 	"waterworks": "Acqua di domani", "tailor": "Ago & coraggio"
 }
 const BUILDING_COSTS = {"residence": 320, "cafe": 420, "garden": 460, "workshop": 540, "clinic": 650, "bakery": 580, "waterworks": 610, "tailor": 690}
+const BUILDING_TIMES = {"residence":30.0,"cafe":45.0,"garden":60.0,"workshop":90.0,"clinic":120.0,"bakery":90.0,"waterworks":135.0,"tailor":105.0}
 const BUILDING_SKILLS = {"cafe": "food", "garden": "food", "bakery": "food", "workshop": "goods", "tailor": "goods", "clinic": "services", "waterworks": "services"}
 const BUILDING_DESCRIPTIONS = {
 	"residence": "Offre cinque letti: ogni letto libero permette di accogliere una persona al cancello.",

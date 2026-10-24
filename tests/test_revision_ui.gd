@@ -54,7 +54,7 @@ func run() -> void:
 	game.coins = 20000
 	game.supplies = 1000
 	for kind: String in ["residence","residence","cafe","garden","workshop","clinic","bakery","waterworks","tailor"]:
-		game.build(kind)
+		ready_build(game,kind)
 	for i: int in range(7):
 		var citizen: Dictionary = game._make_citizen()
 		citizen.hp = 80
@@ -195,3 +195,7 @@ func run() -> void:
 	if FileAccess.file_exists(game.save_path): DirAccess.remove_absolute(ProjectSettings.globalize_path(game.save_path))
 	print("REVISION_UI_CHECKS ",checks," FAILURES ",failures.size())
 	quit(1 if not failures.is_empty() else 0)
+
+func ready_build(model: Node, kind: String) -> bool:
+	var fixture: Script = load(get_script().resource_path.get_base_dir().path_join("construction_fixture.gd"))
+	return fixture.build_ready(model,kind)

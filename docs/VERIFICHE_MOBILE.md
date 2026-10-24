@@ -171,3 +171,27 @@ Sorgente: **1.728 controlli di rendering con OpenGL**, **2.621 layout** e **54 c
 Rilascio **0.4.1.31 / Android 401031** completato in `builds/releases/0.4.1.31/`. Sul pacchetto Windows, eseguito dalla sua cartella senza sorgenti locali del gioco, passano **1.732 controlli di rendering**, **85 interazioni** e **87 risorse**; sull'APK **39 controlli**. Nessun fallimento. I quattro controlli aggiuntivi acquisiscono anche le viste del cancello prima dello zoom. Firma v2/v3 stabile, allineamento, metadati e checksum verificati. Copia Windows dei collegamenti aggiornata, precedente versione conservata in `.runtime/NienteZombie-prima-fix-render.exe`. Log nel rilascio.
 
 Le anteprime `FIX-RENDER-*.png` mostrano i due versi e il confronto cancello panoramica/zoom sui quattro profili. Sono prodotte dal renderer OpenGL del computer; non sono un collaudo su Pixel fisico. L'ambiente impedisce la cache shader, senza effetti sulle verifiche funzionali.
+
+## Cantieri animati e costruzione progressiva — build 0.4.1.33
+
+Ogni nuova costruzione mostra ponteggi, attrezzi e polvere animati, edificio in formazione e conto alla rovescia. Il catalogo espone costo e durata prima della spesa. Le attese dipendono dal tipo e crescono con tutti i lotti avviati, compresi quelli ancora in costruzione. Letti, assegnazioni, merci, ricavi e obiettivi si attivano al completamento. Il dialogo del cantiere si trasforma automaticamente nella scheda operativa.
+
+Il tutorial guida le prime attese di 6 e 10 secondi. I vecchi edifici restano pronti. Durata e tempo residuo sono persistenti e recuperano anche chiusure brevi; la ripresa Android riconcilia l'assenza senza contare due volte i frame già simulati in background. Nessun combattimento aggiuntivo viene simulato al rientro. Dettagli: [CANTIERI_0.4.1.33.md](CANTIERI_0.4.1.33.md).
+
+| Verifica | Controlli | Fallimenti |
+| --- | ---: | ---: |
+| Ciclo, pacing, spese, disponibilità, migrazione, offline, sospensione/ripresa — sorgente e pacchetto | 200 per esecuzione | 0 |
+| Avvio con input effettivo, interfaccia alle tre scale, quattro profili e animazioni — sorgente e pacchetto | 124 per esecuzione | 0 |
+| Tutorial completo con attese reali accelerate — sorgente e pacchetto | 90 per esecuzione | 0 |
+| UX e transazioni — sorgente e pacchetto | 880 per esecuzione | 0 |
+| Layout telefono/PC/tablet — sorgente | 2.621 | 0 |
+| Simulazione prolungata e salvataggi — sorgente | 751 | 0 |
+| Economia e combattimento — sorgente | 655 | 0 |
+| Scroll touch — sorgente | 354 | 0 |
+| Integrazione camminata — sorgente | 54 | 0 |
+| Risorse del pacchetto Windows | 87 | 0 |
+| Risorse dell'APK, inclusi i due nuovi moduli | 41 | 0 |
+
+Rilascio **0.4.1.33 / Android 401033** completato con APK firmato e setup Windows in `builds/releases/0.4.1.33/`. Firma v2/v3 stabile, allineamento, metadati e checksum verificati. Eseguibile dei collegamenti aggiornato, precedente conservato in `.runtime/NienteZombie-prima-cantieri.exe`. I test dei pacchetti girano dalla cartella Windows senza sorgenti di gioco locali; log nel rilascio.
+
+Le anteprime `CONSTRUCTION-*.png` mostrano cantiere iniziale, metà lavori, completamento e dialogo. Le prove grafiche e touch usano il computer e le notifiche di sospensione sono simulate; non costituiscono un test su Pixel fisico. Nei test di persistenza sono attesi cinque avvisi per salvataggi deliberatamente invalidi; l'ambiente impedisce inoltre la cache shader. Nessun fallimento funzionale.

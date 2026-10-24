@@ -49,9 +49,9 @@ func run() -> void:
 	game.coins = 20000
 	game.supplies = 1000
 	game.owned_weapons = ["pistol","shotgun","sniper","smg"]
-	game.build("residence")
-	game.build("cafe")
-	game.build("garden")
+	ready_build(game,"residence")
+	ready_build(game,"cafe")
+	ready_build(game,"garden")
 	root.size = Vector2i(1440,900)
 	ui = load("res://scripts/game_ui.gd").new()
 	root.add_child(ui)
@@ -180,3 +180,7 @@ func capture_sequence() -> void:
 		expect(root.get_texture().get_image().save_png(destination)==OK,"Native opening frame: "+str(sample[1]))
 	scene.queue_free()
 	await settle()
+
+func ready_build(model: Node, kind: String) -> bool:
+	var fixture: Script = load(get_script().resource_path.get_base_dir().path_join("construction_fixture.gd"))
+	return fixture.build_ready(model,kind)

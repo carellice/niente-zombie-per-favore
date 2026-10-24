@@ -134,8 +134,8 @@ func run() -> void:
 	game.skip_tutorial()
 	game.coins = 200000
 	game.supplies = 10000
-	game.build("residence")
-	game.build("cafe")
+	ready_build(game,"residence")
+	ready_build(game,"cafe")
 	for index: int in range(8): game.citizens.append(game._make_citizen())
 	layout.mobile = true
 	root.min_size = Vector2i.ZERO
@@ -246,3 +246,7 @@ func run() -> void:
 	await settle()
 	print("TOUCH SCROLL: %d checks, %d failures" % [checks,failures])
 	quit(0 if failures==0 else 1)
+
+func ready_build(model: Node, kind: String) -> bool:
+	var fixture: Script = load(get_script().resource_path.get_base_dir().path_join("construction_fixture.gd"))
+	return fixture.build_ready(model,kind)

@@ -38,7 +38,7 @@ func run() -> void:
 	game.skip_tutorial()
 	game.coins = 100000
 	game.supplies = 10000
-	for kind: String in ["residence","cafe","garden"]: game.build(kind)
+	for kind: String in ["residence","cafe","garden"]: ready_build(game,kind)
 	game._is_loading = true
 	var person: Dictionary = game._make_citizen()
 	person.id = 9001
@@ -161,3 +161,7 @@ func run() -> void:
 	await settle()
 	print("CITIZEN RENDER GATE: %d checks, %d failures" % [checks,failures])
 	quit(0 if failures==0 else 1)
+
+func ready_build(model: Node, kind: String) -> bool:
+	var fixture: Script = load(get_script().resource_path.get_base_dir().path_join("construction_fixture.gd"))
+	return fixture.build_ready(model,kind)

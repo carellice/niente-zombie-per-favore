@@ -12,6 +12,7 @@ const ZombieSoundscape = preload("res://scripts/zombie_soundscape.gd")
 const TargetOutline = preload("res://scripts/target_outline.gd")
 const BuildingFeedback = preload("res://scripts/building_feedback.gd")
 const CitizenRoaming = preload("res://scripts/citizen_roaming.gd")
+const ConstructionVisual = preload("res://scripts/construction_visual.gd")
 const CITY_START = 600.0
 const LOT_STEP = 330.0
 const CHECKPOINT_LEFT = 245.0
@@ -108,6 +109,7 @@ func _ready() -> void:
 	Game.shot_fired.connect(func(id: int, _damage: float): hit_flashes[id] = 0.16)
 	Game.guard_fired.connect(_on_guard_fired)
 	Game.reload_started.connect(_on_reload_started)
+	Game.building_completed.connect(func(id: int) -> void: building_feedback.click(id))
 	Game.visitor_lost.connect(_on_visitor_lost)
 	last_coins = Game.coins
 	last_gate_hp = Game.gate_hp
@@ -913,6 +915,11 @@ func _draw_building(b: Dictionary) -> void:
 	var texture: Texture2D = extra_building_art.get(str(b.type),null)
 	if texture == null and building_art.size() > art_index and str(b.type) in ["residence","cafe","garden","workshop","clinic"]:
 		texture = building_art[art_index]
+	if Game.is_under_construction(b):
+		ConstructionVisual.draw_site(self,texture,Rect2(x,y-310*_building_zoom(),310*_building_zoom(),315*_building_zoom()),Game.construction_progress(b),actor_clock)
+		_text(Vector2(x+155*_building_zoom(),y+(52 if DeviceLayout.android_phone() else 38)),str(b.name).to_upper(),21,CREAM,heading,true)
+		_building_subtitle(Vector2(x+155*_building_zoom(),y+(94 if DeviceLayout.android_phone() else 62)),"CANTIERE · %s · %d%%" % [ui._time(float(b.construction_remaining)),floori(Game.construction_progress(b)*100.0)],GOLD)
+		return
 	if texture != null:
 		var tint: Color = Color.WHITE
 		if b.type != "residence" and b.workers.is_empty():

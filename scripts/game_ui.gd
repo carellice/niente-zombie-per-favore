@@ -9,6 +9,7 @@ const ExpeditionPanel = preload("res://scripts/expedition_panel.gd")
 const ArmoryPanel = preload("res://scripts/armory_panel.gd")
 const PhonePages = preload("res://scripts/phone_pages.gd")
 const BuildPanel = preload("res://scripts/build_panel.gd")
+const ConstructionPanel = preload("res://scripts/construction_panel.gd")
 const SurvivorCatalog = preload("res://scripts/survivor_catalog.gd")
 const PURCHASE_PANELS = ["build","building","citizens","citizen_equipment","assignment","job_select","gate","armory","weapon_details","expeditions"]
 
@@ -201,6 +202,8 @@ func _ready() -> void:
 	_update_hud()
 	get_tree().create_timer(1.5).timeout.connect(func() -> void:
 		var report: Dictionary = Game.offline_report
+		if int(report.get("construction_ready",0))>0:
+			_show_toast("Cantieri completati mentre eri via: %d. Gli edifici sono pronti!" % int(report.construction_ready))
 		if float(report.get("seconds",0))>=60.0:
 			_show_toast("Ben tornato! I negozi hanno guadagnato %d monete mentre eri via." % int(report.get("coins",0)))
 			if report.get("expedition_ready",false):
@@ -1007,6 +1010,9 @@ func _build_tutorial_panel() -> void:
 	tutorial_panel.hide()
 
 func _tutorial_step() -> Array:
+	var site: Dictionary = Game.active_construction()
+	if not site.is_empty() and Game.tutorial_stage in ["build_residence","build_cafe"]:
+		return [2 if site.type=="residence" else 4,"Stiamo costruendo!","Il cantiere lavora: al termine la casa offrirà i primi letti." if site.type=="residence" else "Ancora pochi secondi: quando il caffè è pronto potrai assegnare il primo lavoratore.","Guarda il cantiere","construction"]
 	match Game.tutorial_stage:
 		"intro": return [0,"Il rifugio comincia con te","Segui una breve guida per difendere il cancello, accogliere persone e aprire il primo negozio.","Inizia i primi passi", "intro"]
 		"first_zombie": return [1,"Aspetta il momento giusto","Quando lo zombie ha un contorno luminoso dorato è a portata della pistola: toccalo per sparare.","Vai alla torretta", "defense"]
@@ -1022,7 +1028,7 @@ func _update_tutorial() -> void:
 	if not is_instance_valid(tutorial_panel): return
 	var should_show: bool = hud.visible and not main_menu_active and not is_instance_valid(modal) and Game.tutorial_active()
 	tutorial_panel.visible = should_show
-	var signature: String = Game.tutorial_stage+":"+str(_tutorial_minimized)+":"+str(Game.has_waiting_visitors())
+	var signature: String = Game.tutorial_stage+":"+str(_tutorial_minimized)+":"+str(Game.has_waiting_visitors())+":"+str(Game.active_construction().get("id",-1))
 	if signature==_tutorial_signature: return
 	_tutorial_signature = signature
 	for child: Node in tutorial_panel.get_children():
@@ -1070,6 +1076,9 @@ func _tutorial_action(action: String) -> void:
 		"defense": focus_defense.emit()
 		"gate": focus_gate.emit()
 		"build": _show_build()
+		"construction":
+			var site: Dictionary = Game.active_construction()
+			if not site.is_empty(): _construction_focus(int(site.id))
 		"cafe":
 			for b: Dictionary in Game.buildings:
 				if b.type=="cafe":
@@ -1130,6 +1139,8 @@ func _update_hud() -> void:
 		var sig: String = str(Game.expedition.get("status","idle"))
 		if sig != _last_panel_signature:
 			_refresh_expedition_if_needed.call_deferred()
+	elif panel_kind == "build" and _last_panel_signature!=_build_catalog_signature():
+		_show_build.call_deferred()
 
 func _refresh_building_if_needed(id: int) -> void:
 	if panel_kind!="building" or panel_id!=id: return
@@ -1526,7 +1537,7 @@ func _refresh_current() -> void:
 		"job_select": _show_job_select(panel_id)
 
 func _building_signature(b: Dictionary) -> String:
-	var states: Array = [b.workers]
+	var states: Array = [b.workers,Game.is_under_construction(b)]
 	for p in b.get("products",[]):
 		states.append(p.get("status","empty"))
 	return JSON.stringify(states)
@@ -1537,6 +1548,9 @@ func show_building(id: int) -> void:
 		return
 	var col: VBoxContainer = _open("building",b.name,"LOTTO %02d  /  %s" % [Game.buildings.find(b)+1,_type_name(b.type).to_upper()],id)
 	_last_panel_signature = _building_signature(b)
+	if Game.is_under_construction(b):
+		ConstructionPanel.show_site(self,col,b)
+		return
 	if b.type == "residence":
 		var c: VBoxContainer = _card(col)
 		_title_row(c,"Una porta aperta, una nuova vita.","ALLOGGI",SAGE)
@@ -1660,6 +1674,9 @@ func _show_building_help(id: int) -> void:
 
 func _show_assignment(bid: int) -> void:
 	var b: Dictionary = _building(bid)
+	if Game.is_under_construction(b):
+		show_building(bid)
+		return
 	if b.is_empty(): return
 	var col: VBoxContainer = _open("assignment","La squadra del negozio",b.name.to_upper(),bid)
 	col.add_child(_copy("Scegli fino a 3 lavoratori. Per questo negozio conta l'affinità %s: riduce il costo e il tempo dei rifornimenti." % _skill_name(str(b.type))))
@@ -1779,7 +1796,7 @@ func _show_job_select(cid: int) -> void:
 	if citizen.is_empty(): return
 	var col: VBoxContainer = _open("job_select","Il posto giusto per %s" % citizen.name,"ASSEGNAZIONE LAVORO",cid)
 	for b in Game.buildings:
-		if b.type=="residence": continue
+		if b.type=="residence" or Game.is_under_construction(b): continue
 		var card: VBoxContainer = _card(col,SAGE if citizen.dream==b.type else BORDER)
 		_title_row(card,b.name,"%d / 3 POSTI" % b.workers.size(),SAGE)
 		card.add_child(_copy("Lavoro ideale: bonus permanente allo stock!" if citizen.dream==b.type else "Ogni lavoratore sblocca un nuovo livello di prodotti.",13,GOLD if citizen.dream==b.type else MUTED))
@@ -1795,6 +1812,13 @@ func _job_assign(cid: int, bid: int) -> void:
 
 func _show_build() -> void:
 	BuildPanel.show_catalog(self)
+
+func _build_catalog_signature() -> String:
+	return Game.tutorial_stage+":"+str(Game.active_construction().get("id",-1))
+
+func _construction_focus(id: int) -> void:
+	focus_city.emit()
+	show_building(id)
 
 func _build(kind: String) -> void:
 	if Game.build(kind):

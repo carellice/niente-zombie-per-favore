@@ -33,7 +33,11 @@ static func _art(kind: String) -> Texture2D:
 static func show_catalog(ui: CanvasLayer) -> void:
 	ui.set_selected_tab("build")
 	var col: VBoxContainer = ui._open("build","Costruisci il rifugio","PIANO DI ESPANSIONE")
-	col.add_child(ui._copy("Le case aggiungono posti letto. I negozi producono merci da vendere: assegna i lavoratori dopo la costruzione.",18))
+	ui._last_panel_signature = ui._build_catalog_signature()
+	col.add_child(ui._copy("Le case aggiungono letti; i negozi producono merci da vendere. Ogni cantiere richiede tempo e i lavori diventano più lunghi man mano che il rifugio cresce.",18))
+	var site: Dictionary = Game.active_construction()
+	if Game.tutorial_active() and not site.is_empty():
+		col.add_child(ui._button("Guarda il cantiere in corso",ui._construction_focus.bind(int(site.id)),true))
 	var grid: GridContainer = GridContainer.new()
 	grid.name = "ConstructionGrid"
 	grid.columns = 2
@@ -73,9 +77,10 @@ static func show_catalog(ui: CanvasLayer) -> void:
 		spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		card.add_child(spacer)
 		var cost: int = Game.next_build_cost(kind)
-		var build: Button = ui._button("Costruisci  ·  %d monete" % cost,ui._build.bind(kind),true,true)
+		var build: Button = ui._button("Costruisci  ·  %d monete\nTempo: %s" % [cost,ui._time(Game.next_build_duration(kind))],ui._build.bind(kind),true,true)
 		build.name = "BuildAction_"+kind
 		build.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		build.disabled = Game.coins<cost
+		build.disabled = Game.coins<cost or (Game.tutorial_active() and not site.is_empty())
+		ui.bindings.append([build,func(button: Button) -> void: button.disabled = Game.coins<Game.next_build_cost(kind) or (Game.tutorial_active() and not Game.active_construction().is_empty())])
 		card.add_child(build)
 	col.add_child(ui._copy("Il costo mostrato è quello che paghi ora. I nuovi lotti diventano più costosi man mano che il rifugio cresce.",16))

@@ -73,7 +73,7 @@ func run() -> void:
 		root.size = Vector2i(1440,900)
 		game.coins = 100000
 		for kind: String in ["bakery","waterworks","tailor"]:
-			expect(game.build(kind),"new facade can be placed in the refuge "+kind)
+			expect(ready_build(game,kind),"new facade can be placed in the refuge "+kind)
 		scene.ui._start_game()
 		scene.ui.toast_stack.visible = false
 		scene.camera_x = 520.0
@@ -100,3 +100,7 @@ func run() -> void:
 		await process_frame
 	print("Suspicion visuals: %d checks, %d failures." % [checks,failures])
 	quit(0 if failures==0 else 1)
+
+func ready_build(model: Node, kind: String) -> bool:
+	var fixture: Script = load(get_script().resource_path.get_base_dir().path_join("construction_fixture.gd"))
+	return fixture.build_ready(model,kind)

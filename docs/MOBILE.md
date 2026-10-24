@@ -20,6 +20,7 @@ La distribuzione Windows dispone anche di una procedura per generare un APK Andr
 - I comandi zoom e pan sono disponibili sullo schermo. Le scorciatoie desktop sono aggiuntive.
 - Gli edifici vengono individuati tramite ID stabili, così il layout può essere sostituito senza cambiare i salvataggi.
 - Il rendering degli sprite, le animazioni e i timer usano il tempo trascorso e non il numero dei fotogrammi.
+- I cantieri mostrano un timer nel lotto e una scheda con avanzamento, costo già pagato e disponibilità al termine. La pagina mantiene lo stesso padding e lo scroll degli altri dialoghi. Durata e tempo residuo proseguono anche offline; i vecchi edifici restano pronti.
 - Salvataggio alla sospensione/focus out e progresso offline sono nel modello. La produzione offline è limitata a otto ore; le ondate restano sospese durante la chiusura.
 
 ## Lavoro necessario prima degli store

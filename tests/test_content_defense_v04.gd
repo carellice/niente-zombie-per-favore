@@ -145,7 +145,7 @@ func test_buildings_and_progress() -> void:
 		expect(not quest_ids.has(quest.id), "Diary goal has a stable unique id " + str(quest.id))
 		quest_ids[quest.id] = true
 	for kind in ["bakery", "waterworks", "tailor"]:
-		expect(model.build(kind), "New building is constructible: " + kind)
+		expect(ready_build(model,kind), "New building is constructible: " + kind)
 		var building = model.buildings.back()
 		expect(building.products.size() == 3 and int(model.stats["built_" + kind]) == 1, "Building has three products and real construction progress: " + kind)
 		for i in range(3):
@@ -195,8 +195,8 @@ func test_zones() -> void:
 
 func test_migration() -> void:
 	fresh()
-	model.build("bakery")
-	model.build("residence")
+	ready_build(model,"bakery")
+	ready_build(model,"residence")
 	model.owned_weapons = ["pistol", "shotgun", "smg"]
 	model.coins = 1962.0
 	model._is_loading = false
@@ -261,7 +261,7 @@ func test_appearances() -> void:
 			dirty_person = visitor
 		if visitor.suspicious:
 			hidden_person = visitor
-	model.build("residence")
+	ready_build(model,"residence")
 	var original_look = int(hidden_person.citizen.look)
 	hidden_person.x = -500.0
 	expect(model.accept_visitor(int(hidden_person.id)), "An infiltrator can reveal itself on admission")
@@ -287,3 +287,7 @@ func write_save(data: Dictionary) -> void:
 	var file = FileAccess.open(model.save_path, FileAccess.WRITE)
 	file.store_string(JSON.stringify(data))
 	file.close()
+
+func ready_build(model: Node, kind: String) -> bool:
+	var fixture: Script = load(get_script().resource_path.get_base_dir().path_join("construction_fixture.gd"))
+	return fixture.build_ready(model,kind)

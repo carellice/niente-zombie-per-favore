@@ -68,9 +68,9 @@ func _test_empty_and_tutorial() -> void:
 	expect(model.shoot(id), "Permanent soldier fires with an empty population")
 	expect(shots.back()[0] == 0, "Shot belongs to the permanent tower soldier")
 	expect(model.threats.is_empty() and model.tutorial_stage == "build_residence", "One pistol shot completes first combat lesson")
-	expect(not model.build("clinic"), "Tutorial protects funds from an unrelated first building")
+	expect(not ready_build(model,"clinic"), "Tutorial protects funds from an unrelated first building")
 	expect(not model.equip_weapon("shotgun"), "Tutorial protects construction funds from optional equipment")
-	expect(model.build("residence"), "First house is affordable")
+	expect(ready_build(model,"residence"), "First house is affordable")
 	expect(model.tutorial_stage == "welcome_visitor" and model.visitors.size() == 1, "First house invites one safe newcomer")
 	expect(not model.visitors[0].suspicious and float(model.visitors[0].x) < -1600.0, "Teaching survivor walks in safely from outside view")
 	var first_id = int(model.visitors[0].id)
@@ -79,7 +79,7 @@ func _test_empty_and_tutorial() -> void:
 	expect(model.visitors[0].citizen.name != model.departing_visitors[0].citizen.name, "Replacement tutorial visitor has a unique identity")
 	expect(model.accept_visitor(int(model.visitors[0].id)), "First newcomer can enter the house")
 	expect(model.tutorial_stage == "build_cafe" and model.citizens.size() == 1, "Admission progresses the tutorial")
-	expect(model.build("cafe"), "First cafe is affordable after house")
+	expect(ready_build(model,"cafe"), "First cafe is affordable after house")
 	expect(model.tutorial_stage == "assign_worker", "Cafe construction asks for a worker")
 	var cafe = model.buildings[1]
 	var person = model.citizens[0]
@@ -146,7 +146,7 @@ func _test_safe_people_and_arrivals() -> void:
 	expect(float(model.threats[0].x) <= model.entrance_x and float(model.threats[0].x) < -3000.0, "Wave enemies use the current offscreen entrance")
 	model.threats.clear()
 	model.coins = 10000.0
-	model.build("residence")
+	ready_build(model,"residence")
 	model._spawn_visitor()
 	var infiltrator = model.visitors.back()
 	infiltrator.x = -430.0
@@ -307,8 +307,8 @@ func _test_endurance() -> void:
 	# No test transaction should create a production save or spend time on disk I/O.
 	model._is_loading = true
 	model._save_timer = -100000000.0
-	model.build("residence")
-	model.build("cafe")
+	ready_build(model,"residence")
+	ready_build(model,"cafe")
 	for i in range(3):
 		var resident = model._make_citizen()
 		model.citizens.append(resident)
@@ -339,3 +339,7 @@ func _test_endurance() -> void:
 	expect(int(model.stats.expeditions) >= 80, "Repeated expeditions remain claimable during new wave pacing")
 	expect(int(model.stats.restocked) >= 25 and float(model.stats.earned) > 1000.0, "Long-running production and commerce continue normally")
 	print("Endurance: day %d, wave %d, kills %d, expeditions %d" % [model.day, model.wave, model.stats.kills, model.stats.expeditions])
+
+func ready_build(model: Node, kind: String) -> bool:
+	var fixture: Script = load(get_script().resource_path.get_base_dir().path_join("construction_fixture.gd"))
+	return fixture.build_ready(model,kind)

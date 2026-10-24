@@ -42,8 +42,8 @@ func run() -> void:
 	game.skip_tutorial()
 	game.coins = 100000
 	game.supplies = 10000
-	game.build("residence")
-	game.build("cafe")
+	ready_build(game,"residence")
+	ready_build(game,"cafe")
 	game._is_loading = true
 	test_names()
 	test_paths()
@@ -171,3 +171,7 @@ func test_paths() -> void:
 	expect(is_equal_approx(fixed,roaming.position(1,600)),"Working residents retain their building placement")
 	roaming.advance([],600,30,1)
 	expect(roaming.states.is_empty(),"Removed residents leave no stale path state")
+
+func ready_build(model: Node, kind: String) -> bool:
+	var fixture: Script = load(get_script().resource_path.get_base_dir().path_join("construction_fixture.gd"))
+	return fixture.build_ready(model,kind)

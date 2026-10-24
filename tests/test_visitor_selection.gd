@@ -100,7 +100,7 @@ func run() -> void:
 	preferences.settings_path = "user://visitor-selection-settings.cfg"
 	game._new_game()
 	game.skip_tutorial()
-	game.build("residence")
+	ready_build(game,"residence")
 	game.set_process(false)
 	preferences.apply_settings({"sound_enabled":false,"screen_shake":false,"fullscreen":false},false)
 	root.size = Vector2i(1440,900)
@@ -192,3 +192,7 @@ func run() -> void:
 			DirAccess.remove_absolute(path)
 	print("VISITOR SELECTION: ",checks," checks; ",failures," failures")
 	quit(0 if failures == 0 else 1)
+
+func ready_build(model: Node, kind: String) -> bool:
+	var fixture: Script = load(get_script().resource_path.get_base_dir().path_join("construction_fixture.gd"))
+	return fixture.build_ready(model,kind)

@@ -11,6 +11,7 @@ signal enemy_defeated(threat_id: int, world_x: float)
 signal visitor_attacked(visitor_id: int, world_x: float, damage: float)
 signal visitor_lost(visitor_id: int, world_x: float, person_name: String)
 signal reload_started(weapon_key: String, duration: float)
+signal building_completed(building_id: int)
 
 const SAVE_VERSION = 2
 const OFFLINE_CAP = 28800.0
@@ -33,6 +34,7 @@ const EXPEDITION_PARTIAL_REWARD = 0.4
 const EXPEDITION_SUCCESS_DAMAGE = 8
 const EXPEDITION_FAILURE_DAMAGE = 25
 const EXPEDITION_HEALTH_FLOOR = 45
+const MAX_CONSTRUCTION_TIME = 21600.0
 const BUILDING_NAMES = ContentCatalog.BUILDING_NAMES
 const BUILDING_SKILLS = ContentCatalog.BUILDING_SKILLS
 const BUILDING_DESCRIPTIONS = ContentCatalog.BUILDING_DESCRIPTIONS
@@ -96,6 +98,8 @@ var _tutorial_visitor_id: int = -1
 var _range_feedback_timer: float = 0.0
 var _arrivals_without_variant: int = 0
 var _wave_wait_scale: float = 1.0
+var _construction_sleep_at: float = -1.0
+var _construction_background_advanced: float = 0.0
 
 func _make_zones() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
@@ -113,7 +117,12 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST:
 		save_game()
 		get_tree().quit()
-	elif what == NOTIFICATION_APPLICATION_PAUSED or what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+	elif what == NOTIFICATION_APPLICATION_PAUSED:
+		_suspend_construction(Time.get_unix_time_from_system())
+		save_game()
+	elif what == NOTIFICATION_APPLICATION_RESUMED:
+		_resume_construction(Time.get_unix_time_from_system())
+	elif what == NOTIFICATION_APPLICATION_FOCUS_OUT:
 		save_game()
 
 func _new_game() -> void:
@@ -146,6 +155,8 @@ func _new_game() -> void:
 	_range_feedback_timer = 0.0
 	_arrivals_without_variant = 0
 	_wave_wait_scale = 1.0
+	_construction_sleep_at = -1.0
+	_construction_background_advanced = 0.0
 	_dirty = false
 	_is_loading = false
 	_highest_timestamp = Time.get_unix_time_from_system()
@@ -257,9 +268,9 @@ func skip_tutorial() -> bool:
 	_commit()
 	return true
 
-func _has_building(kind: String) -> bool:
+func _has_building(kind: String, ready_only: bool=false) -> bool:
 	for building in buildings:
-		if building["type"] == kind:
+		if building["type"] == kind and (not ready_only or not is_under_construction(building)):
 			return true
 	return false
 
@@ -278,7 +289,7 @@ func _can_spend_optional_coins(cost: int) -> bool:
 
 func _tutorial_cafe() -> Dictionary:
 	for building in buildings:
-		if building["type"] == "cafe":
+		if building["type"] == "cafe" and not is_under_construction(building):
 			return building
 	return {}
 
@@ -294,7 +305,7 @@ func _sync_tutorial() -> void:
 					_add_threat("walker", entrance_x)
 					threats.back()["speed"] = TUTORIAL_WALK_SPEED
 			"build_residence":
-				if _has_building("residence"):
+				if _has_building("residence",true):
 					tutorial_stage = "welcome_visitor"
 			"welcome_visitor":
 				if not citizens.is_empty():
@@ -304,7 +315,7 @@ func _sync_tutorial() -> void:
 					_spawn_visitor(true)
 					_tutorial_visitor_id = int(visitors.back()["id"])
 			"build_cafe":
-				if _has_building("cafe"):
+				if _has_building("cafe",true):
 					tutorial_stage = "assign_worker"
 			"assign_worker":
 				var cafe = _tutorial_cafe()
@@ -369,7 +380,7 @@ func _make_building(kind: String) -> Dictionary:
 				"price": float(2 + tier * 2 + (1 if kind == "clinic" else 0)),
 				"sell_interval": 1.9 + tier * 0.6, "sale_clock": 0.0
 			})
-	return {"id": _id(), "type": kind, "name": BUILDING_NAMES.get(kind, "Nuova attività"), "workers": [], "products": products, "level": 1, "dream_bonus": false}
+	return {"id": _id(), "type": kind, "name": BUILDING_NAMES.get(kind, "Nuova attività"), "workers": [], "products": products, "level": 1, "dream_bonus": false,"construction_duration":0.0,"construction_remaining":0.0}
 
 func _process(delta: float) -> void:
 	if paused:
@@ -385,6 +396,8 @@ func advance(delta: float) -> void:
 	shot_cooldown = maxf(0.0, shot_cooldown - delta)
 	_gate_alarm_timer = maxf(0.0, _gate_alarm_timer - delta)
 	_range_feedback_timer = maxf(0.0, _range_feedback_timer - delta)
+	if _construction_sleep_at>=0.0: _construction_background_advanced += delta
+	_tick_construction(delta)
 	_tick_products(delta)
 	_tick_expedition(delta)
 	_tick_threats(delta)
@@ -405,6 +418,7 @@ func advance(delta: float) -> void:
 func _tick_products(delta: float, offline: bool = false) -> float:
 	var earned: float = 0.0
 	for building in buildings:
+		if is_under_construction(building): continue
 		for product in building["products"]:
 			if product["status"] == "restocking" and _available_workers(building) >= int(product["tier"]):
 				product["remaining"] = maxf(0.0, float(product["remaining"]) - delta)
@@ -431,6 +445,7 @@ func _tick_products(delta: float, offline: bool = false) -> float:
 	return earned
 
 func _available_workers(building: Dictionary) -> int:
+	if is_under_construction(building): return 0
 	var count = 0
 	for worker_id in building["workers"]:
 		var worker = get_citizen(int(worker_id))
@@ -441,13 +456,14 @@ func _available_workers(building: Dictionary) -> int:
 func capacity() -> int:
 	var beds = 0
 	for building in buildings:
-		if building["type"] == "residence":
+		if building["type"] == "residence" and not is_under_construction(building):
 			beds += 5 * int(building["level"])
 	return beds
 
 func income_rate() -> float:
 	var result = 0.0
 	for building in buildings:
+		if is_under_construction(building): continue
 		for product in building["products"]:
 			if product["status"] == "stocked" and int(product["stock"]) > 0:
 				result += float(product["price"]) / float(product["sell_interval"])
@@ -463,8 +479,76 @@ func next_build_cost(kind: String) -> int:
 	var base: int = ContentCatalog.BUILDING_COSTS[kind]
 	return int(round(float(base) * pow(1.28, count)))
 
+func is_under_construction(building: Dictionary) -> bool:
+	return float(building.get("construction_remaining",0.0))>0.0
+
+func active_construction() -> Dictionary:
+	for building: Dictionary in buildings:
+		if is_under_construction(building): return building
+	return {}
+
+func construction_progress(building: Dictionary) -> float:
+	var duration: float = float(building.get("construction_duration",0.0))
+	return clampf(1.0-float(building.get("construction_remaining",0.0))/duration,0.0,1.0) if duration>0.0 else 1.0
+
+func construction_stage(building: Dictionary) -> String:
+	var progress: float = construction_progress(building)
+	if not is_under_construction(building): return "Completato"
+	return "Fondamenta" if progress<0.25 else "Struttura" if progress<0.75 else "Finiture"
+
+func next_build_duration(kind: String) -> float:
+	if not ContentCatalog.BUILDING_TIMES.has(kind): return 0.0
+	if tutorial_active():
+		if kind=="residence" and not _has_building(kind): return 6.0
+		if kind=="cafe" and not _has_building(kind): return 10.0
+	# Pending lots count too: parallel starts never evade the progression curve.
+	var lots: float = float(buildings.size())
+	return minf(MAX_CONSTRUCTION_TIME,ceilf(float(ContentCatalog.BUILDING_TIMES[kind])*(1.0+0.28*lots+0.04*lots*lots)))
+
+func _tick_construction(delta: float, offline: bool=false) -> int:
+	if delta<=0.0: return 0
+	var completed: int = 0
+	for building: Dictionary in buildings:
+		if not is_under_construction(building): continue
+		building.construction_remaining = maxf(0.0,float(building.construction_remaining)-delta)
+		if is_under_construction(building): continue
+		completed += 1
+		stats["built"] = int(stats.get("built",0))+1
+		_increment_stat("built_"+str(building.type))
+		_dirty = true
+		building_completed.emit(int(building.id))
+		if not offline:
+			toast.emit(str(building.name)+" è pronto. Il rifugio cresce!")
+			sfx.emit("ready")
+	return completed
+
+func _suspend_construction(now: float) -> void:
+	if _construction_sleep_at>=0.0: return
+	_construction_sleep_at = now
+	_construction_background_advanced = 0.0
+
+func _resume_construction(now: float) -> int:
+	if _construction_sleep_at<0.0: return 0
+	var elapsed: float = 0.0 if now+5.0<_highest_timestamp else clampf(now-_construction_sleep_at,0.0,OFFLINE_CAP)
+	var missed: float = maxf(0.0,elapsed-_construction_background_advanced)
+	_construction_sleep_at = -1.0
+	_construction_background_advanced = 0.0
+	_highest_timestamp = maxf(_highest_timestamp,now)
+	var finished: int = _tick_construction(missed,true)
+	_sync_tutorial()
+	_sync_quests()
+	changed.emit()
+	if finished>0:
+		toast.emit("Cantieri completati mentre eri via: %d. Gli edifici sono pronti!" % finished)
+		sfx.emit("ready")
+	save_game()
+	return finished
+
 func build(kind: String) -> bool:
 	if tutorial_active():
+		if not active_construction().is_empty():
+			toast.emit("Il primo cantiere è in corso. Aspetta che sia pronto.")
+			return false
 		var expected = "residence" if not _has_building("residence") else ("cafe" if not _has_building("cafe") else "")
 		if not expected.is_empty() and kind != expected:
 			toast.emit("Per iniziare costruiamo " + ("una residenza per accogliere le persone." if expected == "residence" else "un caffè per far partire il rifugio."))
@@ -475,12 +559,13 @@ func build(kind: String) -> bool:
 	if coins < cost:
 		toast.emit("Servono " + str(cost) + " monete per questo edificio.")
 		return false
+	var duration: float = next_build_duration(kind)
 	coins -= cost
 	var building = _make_building(kind)
+	building["construction_duration"] = duration
+	building["construction_remaining"] = duration
 	buildings.append(building)
-	stats["built"] = int(stats.get("built", 0)) + 1
-	_increment_stat("built_" + kind)
-	toast.emit(building["name"] + " è pronto. Il rifugio cresce!")
+	toast.emit("Cantiere avviato: " + building["name"] + ".")
 	sfx.emit("build")
 	_commit()
 	return true
@@ -509,7 +594,7 @@ func assign(citizen_id: int, building_id: int) -> bool:
 		_commit()
 		return true
 	var building = get_building(building_id)
-	if building.is_empty() or building["type"] == "residence":
+	if building.is_empty() or building["type"] == "residence" or is_under_construction(building):
 		return false
 	if int(citizen["job"]) == building_id:
 		return true
@@ -546,7 +631,7 @@ func toggle_guard(citizen_id: int) -> bool:
 
 func restock(building_id: int, tier: int) -> bool:
 	var building = get_building(building_id)
-	if building.is_empty() or tier < 1 or tier > building["products"].size():
+	if building.is_empty() or is_under_construction(building) or tier < 1 or tier > building["products"].size():
 		return false
 	var product: Dictionary = building["products"][tier - 1]
 	if product["status"] == "ready":
@@ -586,7 +671,7 @@ func restock(building_id: int, tier: int) -> bool:
 
 func speed_up(building_id: int, tier: int) -> bool:
 	var building = get_building(building_id)
-	if building.is_empty() or tier < 1 or tier > building["products"].size():
+	if building.is_empty() or is_under_construction(building) or tier < 1 or tier > building["products"].size():
 		return false
 	var product = building["products"][tier - 1]
 	if product["status"] != "restocking" or gems < 1:
@@ -1158,12 +1243,13 @@ func _migrate_quests(saved: Array, content_version: int) -> void:
 	if content_version < ContentCatalog.QUEST_VERSION:
 		# Only infer facts visible in the old save; never invent past rewards or
 		# completed trips. Backfill runs once and never marks new quests claimed.
-		stats["built"] = maxi(int(stats.get("built", 0)), buildings.size())
+		stats["built"] = maxi(int(stats.get("built", 0)), buildings.filter(func(b: Dictionary) -> bool: return not is_under_construction(b)).size())
 		stats["accepted"] = maxi(int(stats.get("accepted", 0)), citizens.size())
 		var existing_assignments = 0
 		var type_counts: Dictionary = {}
 		var stocks: Dictionary = {}
 		for building in buildings:
+			if is_under_construction(building): continue
 			var kind = str(building["type"])
 			type_counts[kind] = int(type_counts.get(kind, 0)) + 1
 			existing_assignments += building["workers"].size()
@@ -1264,6 +1350,8 @@ func load_game() -> bool:
 		push_warning("Salvataggio incompleto; mantenuta la nuova partita.")
 		return false
 	_is_loading = true
+	_construction_sleep_at = -1.0
+	_construction_background_advanced = 0.0
 	coins = maxf(0.0, float(data.get("coins", 1000.0)))
 	supplies = maxi(0, int(data.get("supplies", 65)))
 	gems = maxi(0, int(data.get("gems", 12)))
@@ -1276,6 +1364,9 @@ func load_game() -> bool:
 	buildings.clear()
 	for building in data["buildings"]:
 		building["id"] = int(building["id"])
+		# Buildings from older saves were already operational.
+		building["construction_duration"] = float(building.get("construction_duration",0.0))
+		building["construction_remaining"] = float(building.get("construction_remaining",0.0))
 		var worker_ids: Array = []
 		for worker_id in building.get("workers", []):
 			worker_ids.append(int(worker_id))
@@ -1362,6 +1453,7 @@ func load_game() -> bool:
 		elapsed = clampf(now - saved_time, 0.0, OFFLINE_CAP)
 	_highest_timestamp = maxf(_highest_timestamp, now)
 	offline_report = {}
+	var completed_sites: int = _tick_construction(elapsed,true)
 	if elapsed >= 20.0:
 		var earned = _tick_products(elapsed, true)
 		_tick_expedition(elapsed, true)
@@ -1369,6 +1461,7 @@ func load_game() -> bool:
 		offline_report = {"seconds": elapsed, "coins": int(earned), "clock_warning": false, "capped": now - saved_time > OFFLINE_CAP, "expedition_ready": expedition.get("status", "idle") == "ready"}
 	elif clock_warning:
 		offline_report = {"seconds": 0, "coins": 0, "clock_warning": true, "capped": false}
+	if completed_sites>0: offline_report["construction_ready"] = completed_sites
 	_is_loading = false
 	_sync_tutorial()
 	_sync_quests()
@@ -1410,11 +1503,18 @@ func _valid_save(data: Dictionary) -> bool:
 			return false
 		if building["workers"].size() > 3 or building["products"].size() > 3:
 			return false
+		for key: String in ["construction_duration","construction_remaining"]:
+			if building.has(key) and (not _finite_number(building[key]) or float(building[key])<0.0): return false
+		var duration: float = float(building.get("construction_duration",0.0))
+		var remaining: float = float(building.get("construction_remaining",0.0))
+		if duration>MAX_CONSTRUCTION_TIME or remaining>duration: return false
+		if remaining>0.0 and not building["workers"].is_empty(): return false
 		for product in building["products"]:
 			if not product is Dictionary or not product.has_all(["tier", "cost", "duration", "status", "remaining", "stock", "max_stock", "price", "sell_interval"]):
 				return false
 			if not str(product["status"]) in ["empty", "restocking", "ready", "stocked"] or float(product["sell_interval"]) <= 0.0:
 				return false
+			if remaining>0.0 and (product["status"]!="empty" or int(product["stock"])!=0): return false
 	var saved_expedition = data.get("expedition", {"status": "idle"})
 	if not saved_expedition is Dictionary or not saved_expedition.get("status", "idle") in ["idle", "running", "ready"]:
 		return false

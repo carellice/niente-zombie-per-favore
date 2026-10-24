@@ -65,8 +65,8 @@ func run() -> void:
 	game.skip_tutorial()
 	game.coins = 10000
 	game.supplies = 1000
-	game.build("residence")
-	game.build("cafe")
+	ready_build(game,"residence")
+	ready_build(game,"cafe")
 	for index: int in range(4): game.citizens.append(game._make_citizen())
 	layout.mobile = true
 	layout.preview_android_shortest_dp = 400.0
@@ -251,3 +251,7 @@ func run() -> void:
 	await settle()
 	print("PHONE INTERACTIONS: %d checks, %d failures" % [checks,failures])
 	quit(0 if failures==0 else 1)
+
+func ready_build(model: Node, kind: String) -> bool:
+	var fixture: Script = load(get_script().resource_path.get_base_dir().path_join("construction_fixture.gd"))
+	return fixture.build_ready(model,kind)

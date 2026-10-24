@@ -43,8 +43,8 @@ func run() -> void:
 	game.set_process(false)
 	game._new_game()
 	game.skip_tutorial()
-	game.build("residence")
-	game.build("cafe")
+	ready_build(game,"residence")
+	ready_build(game,"cafe")
 	layout.mobile = false
 	root.size = Vector2i(1440,900)
 	scene = load("res://main.tscn").instantiate()
@@ -203,3 +203,7 @@ func run() -> void:
 	await settle()
 	print("ARRIVAL FEEDBACK: %d checks, %d failures" % [checks,failures])
 	quit(0 if failures==0 else 1)
+
+func ready_build(model: Node, kind: String) -> bool:
+	var fixture: Script = load(get_script().resource_path.get_base_dir().path_join("construction_fixture.gd"))
+	return fixture.build_ready(model,kind)

@@ -87,7 +87,7 @@ func run() -> void:
 	game.skip_tutorial()
 	game.coins = 10000
 	game.set_process(false)
-	game.build("cafe")
+	ready_build(game,"cafe")
 	game._spawn_visitor(true)
 	var visitor: Dictionary = game.visitors[0]
 	visitor.x = 180.0
@@ -197,3 +197,7 @@ func run() -> void:
 			DirAccess.remove_absolute(path)
 	print("INTERFACE_AUDIO_CHECKS ",checks," FAILURES ",failures.size())
 	quit(0 if failures.is_empty() else 1)
+
+func ready_build(model: Node, kind: String) -> bool:
+	var fixture: Script = load(get_script().resource_path.get_base_dir().path_join("construction_fixture.gd"))
+	return fixture.build_ready(model,kind)

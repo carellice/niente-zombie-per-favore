@@ -48,7 +48,7 @@ func run() -> void:
 	game.coins = 100000
 	game.supplies = 1000
 	for kind: String in ["residence","residence","cafe","garden","workshop","clinic","bakery","waterworks","tailor"]:
-		expect(game.build(kind),"Catalog builds "+kind)
+		expect(ready_build(game,kind),"Catalog builds "+kind)
 	for index: int in range(8): game.citizens.append(game._make_citizen())
 	var cafe: Dictionary = game.buildings[2]
 	for index: int in range(3): game.assign(int(game.citizens[index].id),int(cafe.id))
@@ -166,3 +166,7 @@ func run() -> void:
 	if FileAccess.file_exists(game.save_path): DirAccess.remove_absolute(ProjectSettings.globalize_path(game.save_path))
 	print("V04_UI_CHECKS ",checks," FAILURES ",failures.size())
 	quit(1 if not failures.is_empty() else 0)
+
+func ready_build(model: Node, kind: String) -> bool:
+	var fixture: Script = load(get_script().resource_path.get_base_dir().path_join("construction_fixture.gd"))
+	return fixture.build_ready(model,kind)

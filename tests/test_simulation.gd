@@ -47,7 +47,7 @@ func run() -> void:
 	expect(model.visitors.size() == 1, "Full residence leaves visitor at gate")
 	var money_before = model.coins
 	var house_cost = model.next_build_cost("residence")
-	expect(model.build("residence"), "Residence construction succeeds with funds")
+	expect(ready_build(model,"residence"), "Residence construction succeeds with funds")
 	expect(is_equal_approx(model.coins, money_before - house_cost), "Construction charges the displayed price")
 	expect(model.capacity() == 10, "Second residence adds five beds")
 	expect(model.accept_visitor(waiting_id), "Additional beds permit admission")
@@ -277,3 +277,7 @@ func _write_text(text: String) -> void:
 	var file = FileAccess.open(model.save_path, FileAccess.WRITE)
 	file.store_string(text)
 	file.close()
+
+func ready_build(model: Node, kind: String) -> bool:
+	var fixture: Script = load(get_script().resource_path.get_base_dir().path_join("construction_fixture.gd"))
+	return fixture.build_ready(model,kind)

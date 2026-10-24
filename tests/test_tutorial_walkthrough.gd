@@ -85,11 +85,14 @@ func capture(path: String) -> void:
 
 func run() -> void:
 	game = root.get_node("Game")
-	game.save_path = "user://tutorial-walkthrough-save.json"
+	var folder: String = OS.get_environment("NZPF_TEST_DATA_DIR")
+	if folder.is_empty(): folder = ProjectSettings.globalize_path("res://.runtime/tutorial-construction")
+	DirAccess.make_dir_recursive_absolute(folder)
+	game.save_path = folder.path_join("colony.json")
 	game.set_process(false)
 	game._new_game()
 	var preferences: Node = root.get_node("Preferences")
-	preferences.settings_path = "user://tutorial-walkthrough-settings.cfg"
+	preferences.settings_path = folder.path_join("preferences.cfg")
 	preferences.apply_settings({"sound_enabled":false,"screen_shake":false,"fullscreen":false},false)
 	root.size = Vector2i(1440,900)
 	scene = load("res://main.tscn").instantiate()
@@ -123,10 +126,13 @@ func run() -> void:
 		await finish(preferences)
 		return
 	expect(ui.panel_kind=="build","House guidance opens the actual construction catalog")
-	if not await press("Costruisci  ·  320 monete",ui.modal):
+	if not await press("Costruisci  ·  320 monete",ui.modal,true):
 		await finish(preferences)
 		return
-	expect(game.buildings.size()==1 and game.buildings[0].type=="residence" and game.capacity()==5,"House button spends coins and creates five real beds")
+	expect(game.buildings.size()==1 and game.buildings[0].type=="residence" and game.capacity()==0,"House button starts construction before granting beds")
+	await stage("build_residence","Guarda il cantiere")
+	await advance(float(game.buildings[0].construction_remaining)+0.1)
+	expect(game.capacity()==5,"Finishing the actual timer creates five real beds")
 	await stage("welcome_visitor","Vai al cancello")
 	expect(game.visitors.size()==1 and float(game.visitors[0].x)<-1000.0,"The first teaching survivor also enters from outside the screen")
 	await press("Vai al cancello",ui.tutorial_panel)
@@ -140,10 +146,12 @@ func run() -> void:
 	expect(game.citizens.size()==1 and game.visitors.is_empty(),"Admission transfers the actual visitor into the refuge")
 	await stage("build_cafe","Costruisci il caffè")
 	await press("Costruisci il caffè",ui.tutorial_panel)
-	if not await press("Costruisci  ·  420 monete",ui.modal):
+	if not await press("Costruisci  ·  420 monete",ui.modal,true):
 		await finish(preferences)
 		return
 	expect(game.buildings.size()==2 and game.buildings[1].type=="cafe","Café is constructed through its catalog button")
+	await stage("build_cafe","Guarda il cantiere")
+	await advance(float(game.buildings[1].construction_remaining)+0.1)
 	await stage("assign_worker","Apri il caffè")
 	await press("Apri il caffè",ui.tutorial_panel)
 	expect(ui.panel_kind=="building" and ui.panel_id==int(game.buildings[1].id),"Guidance opens the specific café dialog")
