@@ -195,3 +195,11 @@ Il tutorial guida le prime attese di 6 e 10 secondi. I vecchi edifici restano pr
 Rilascio **0.4.1.33 / Android 401033** completato con APK firmato e setup Windows in `builds/releases/0.4.1.33/`. Firma v2/v3 stabile, allineamento, metadati e checksum verificati. Eseguibile dei collegamenti aggiornato, precedente conservato in `.runtime/NienteZombie-prima-cantieri.exe`. I test dei pacchetti girano dalla cartella Windows senza sorgenti di gioco locali; log nel rilascio.
 
 Le anteprime `CONSTRUCTION-*.png` mostrano cantiere iniziale, metà lavori, completamento e dialogo. Le prove grafiche e touch usano il computer e le notifiche di sospensione sono simulate; non costituiscono un test su Pixel fisico. Nei test di persistenza sono attesi cinque avvisi per salvataggi deliberatamente invalidi; l'ambiente impedisce inoltre la cache shader. Nessun fallimento funzionale.
+
+## Espansione del rifugio — build 0.4.1.34
+
+Il limite destro riserva un intero lotto libero, comprende l'ingombro delle scritte e conserva un margine rispetto al display e al notch. Cresce di un lotto appena si avvia una costruzione: dopo il terzo edificio e nei rifugi più grandi il comando per costruire resta interamente raggiungibile. Area cliccabile e disegno condividono la geometria; il comando risponde anche sulla didascalia inferiore. La vista resta orizzontale e lo zoom non cambia. Salvataggi compatibili. Dettagli: [ESPANSIONE_RIFUGIO_0.4.1.34.md](ESPANSIONE_RIFUGIO_0.4.1.34.md).
+
+**604 controlli del sorgente e 604 del pacchetto Windows con OpenGL**, senza fallimenti: PC, tablet e due formati smartphone, tre scale UI, tre livelli di zoom, rifugi con 0/3/4/12 lotti, area sicura e clic effettivi. Passano inoltre **390 controlli di layout**, **200 di costruzione**, **87 delle risorse Windows** e **41 dell'APK**. Dati isolati e notifiche del modello simulate sul computer; nessun nuovo collaudo su Pixel fisico.
+
+Rilascio **0.4.1.34 / Android 401034** completato con setup Windows e APK firmato. Firma v2/v3 stabile, allineamento, versione e checksum verificati; eseguibile dei collegamenti aggiornato con copia della precedente versione. Log in `builds/releases/0.4.1.34/logs/`.

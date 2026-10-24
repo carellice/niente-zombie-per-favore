@@ -15,6 +15,7 @@ const CitizenRoaming = preload("res://scripts/citizen_roaming.gd")
 const ConstructionVisual = preload("res://scripts/construction_visual.gd")
 const CITY_START = 600.0
 const LOT_STEP = 330.0
+const EXPANSION_RECT = Rect2(20.0, -210.0, 240.0, 210.0)
 const CHECKPOINT_LEFT = 245.0
 const CHECKPOINT_HEIGHT = 510.0
 const CREAM = Color("eee8d6")
@@ -461,8 +462,25 @@ func _wx(screen_x: float) -> float:
 	return screen_x / zoom + camera_x
 
 func _limit_camera() -> void:
-	var right: float = _city_start() + Game.buildings.size() * _lot_step() + 220.0
-	target_camera = clampf(target_camera, -850.0, maxf(-210.0, right - size.x / target_zoom))
+	# Keep a complete empty lot beyond every occupied or unfinished lot.
+	# The old fixed 220-unit allowance clipped even the desktop button, and
+	# ignored the larger smartphone buildings entirely.
+	var right: float = _expansion_x() + _lot_step()
+	if heading != null and body != null:
+		var text_scale: float = _world_text_scale()
+		var label_width: float = maxf(heading.get_string_size("QUI C'È FUTURO",HORIZONTAL_ALIGNMENT_LEFT,-1,roundi(20*text_scale)).x,heading.get_string_size("LOTTO LIBERO",HORIZONTAL_ALIGNMENT_LEFT,-1,roundi(19*text_scale)).x)
+		label_width = maxf(label_width,body.get_string_size("Tocca per costruire",HORIZONTAL_ALIGNMENT_LEFT,-1,roundi(13*text_scale)).x)
+		right = maxf(right,_expansion_x()+EXPANSION_RECT.get_center().x*DeviceLayout.building_scale()+(label_width*0.5+2.0)/target_zoom)
+	var margin: float = 24.0
+	if DeviceLayout.mobile:
+		margin += maxf(0.0,size.x-DeviceLayout.safe_rect().end.x*DeviceLayout.ui_scale())
+	target_camera = clampf(target_camera, -850.0, maxf(-210.0, right - (size.x-margin) / target_zoom))
+
+func _expansion_x() -> float:
+	return _city_start() + Game.buildings.size() * _lot_step()
+
+func _expansion_rect() -> Rect2:
+	return Rect2(Vector2(_sx(_expansion_x()),_ground())+EXPANSION_RECT.position*_building_zoom(),EXPANSION_RECT.size*_building_zoom())
 
 func focus_gate() -> void:
 	camera_transition.clear()
@@ -684,8 +702,8 @@ func _world_click(pos: Vector2) -> void:
 			Game.sfx.emit("ui")
 			ui.show_building(int(b.id))
 			return
-	var extension_x: float = _city_start() + Game.buildings.size() * _lot_step()
-	if Rect2(_sx(extension_x), _ground() - 190.0 * _building_zoom(), 260.0 * _building_zoom(), 240.0 * _building_zoom()).has_point(pos):
+	# Include the caption below the illustrated lot in the clickable area.
+	if _expansion_rect().grow_individual(6.0,6.0,6.0,56.0).has_point(pos):
 		Game.sfx.emit("ui")
 		ui._navigate("build")
 
@@ -978,11 +996,10 @@ func _building_subtitle(baseline: Vector2, text: String, color: Color) -> void:
 		_text(baseline+Vector2(0,line_height*index),lines[index],13,color,body,true)
 
 func _draw_expansion() -> void:
-	var x: float = _sx(_city_start()+Game.buildings.size()*_lot_step())
 	var y: float = _ground()
-	if x > size.x+100 or x+260*_building_zoom() < 0:
+	var rect: Rect2 = _expansion_rect()
+	if rect.position.x > size.x+100 or rect.end.x < 0:
 		return
-	var rect: Rect2 = Rect2(x+20*_building_zoom(),y-210*_building_zoom(),240*_building_zoom(),210*_building_zoom())
 	draw_rect(rect,Color(0.1,0.2,0.18,0.12))
 	for i: int in range(8):
 		var dx: float = rect.position.x + i*30*_building_zoom()
