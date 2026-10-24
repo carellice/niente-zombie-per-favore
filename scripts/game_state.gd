@@ -274,7 +274,7 @@ func _has_building(kind: String, ready_only: bool=false) -> bool:
 			return true
 	return false
 
-func _can_spend_optional_coins(cost: int) -> bool:
+func _can_spend_optional_coins(cost: int, notify: bool=true) -> bool:
 	if not tutorial_active():
 		return true
 	var reserve = 22 if int(stats.get("restocked", 0)) == 0 else 0
@@ -283,7 +283,8 @@ func _can_spend_optional_coins(cost: int) -> bool:
 	if not _has_building("cafe"):
 		reserve += next_build_cost("cafe")
 	if coins - cost < reserve:
-		toast.emit("Teniamo da parte le monete per la prima casa, il caffè e il suo rifornimento.")
+		if notify:
+			toast.emit("Teniamo da parte le monete per la prima casa, il caffè e il suo rifornimento.")
 		return false
 	return true
 
@@ -1016,6 +1017,10 @@ func repair_gate() -> bool:
 
 func gate_upgrade_cost() -> Dictionary:
 	return {"coins": 290 + gate_level * 140, "supplies": 12 + gate_level * 8}
+
+func can_upgrade_gate() -> bool:
+	var cost: Dictionary = gate_upgrade_cost()
+	return coins>=int(cost.coins) and supplies>=int(cost.supplies) and _can_spend_optional_coins(int(cost.coins),false)
 
 func upgrade_gate() -> bool:
 	var cost = gate_upgrade_cost()

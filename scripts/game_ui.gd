@@ -1967,20 +1967,28 @@ func show_gate() -> void:
 	bindings.append([bar,func(p: ProgressBar) -> void: p.value=Game.gate_hp/maxf(Game.gate_max,1)*100])
 	card.add_child(_copy("I superstiti contano su queste mura. Riparale e rinforzale per difendere il rifugio dagli zombie."))
 	var actions: HBoxContainer = _hbox(10)
-	var repair_cost: Dictionary = Game.repair_cost()
-	var upgrade_cost: Dictionary = Game.gate_upgrade_cost()
-	var repair: Button = _button("Ripara\n%d monete + %d provviste" % [int(repair_cost.coins),int(repair_cost.supplies)],_repair,true)
+	var repair: Button = _button("",_repair,true)
+	repair.name = "GateRepair"
 	repair.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	repair.disabled = Game.gate_hp>=Game.gate_max
+	_update_gate_action(repair,false)
+	bindings.append([repair,_update_gate_action.bind(false)])
 	actions.add_child(repair)
-	var upgrade: Button = _button("Potenzia\n%d monete + %d provviste" % [int(upgrade_cost.coins),int(upgrade_cost.supplies)],_upgrade,false)
+	var upgrade: Button = _button("",_upgrade,false)
+	upgrade.name = "GateUpgrade"
 	upgrade.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_update_gate_action(upgrade,true)
+	bindings.append([upgrade,_update_gate_action.bind(true)])
 	actions.add_child(upgrade)
 	_fixed_actions().add_child(actions)
 	col.add_child(_label("Torretta presidiata  ·  %d zombie fuori dalle mura" % Game.threats.size(),17,TEXT,true))
 	col.add_child(_copy("Il militare sulla torretta spara al tuo comando: tocca uno zombie. Per il mitragliatore puoi tenere premuto. I cittadini possono dedicarsi al lavoro e alle spedizioni.",14))
 	col.add_child(_button("Scegli un'arma",_show_armory,false,true))
 	_fixed_actions().add_child(_button("Al cancello. Si difende casa.  →",_gate_focus,true))
+
+func _update_gate_action(button: Button, upgrade: bool) -> void:
+	var cost: Dictionary = Game.gate_upgrade_cost() if upgrade else Game.repair_cost()
+	button.text = ("Potenzia" if upgrade else "Ripara")+"\n%d monete + %d provviste" % [int(cost.coins),int(cost.supplies)]
+	button.disabled = not Game.can_upgrade_gate() if upgrade else (Game.gate_hp>=Game.gate_max-0.01 or Game.coins<int(cost.coins) or Game.supplies<int(cost.supplies))
 
 func _repair() -> void:
 	Game.repair_gate()

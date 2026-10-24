@@ -203,3 +203,11 @@ Il limite destro riserva un intero lotto libero, comprende l'ingombro delle scri
 **604 controlli del sorgente e 604 del pacchetto Windows con OpenGL**, senza fallimenti: PC, tablet e due formati smartphone, tre scale UI, tre livelli di zoom, rifugi con 0/3/4/12 lotti, area sicura e clic effettivi. Passano inoltre **390 controlli di layout**, **200 di costruzione**, **87 delle risorse Windows** e **41 dell'APK**. Dati isolati e notifiche del modello simulate sul computer; nessun nuovo collaudo su Pixel fisico.
 
 Rilascio **0.4.1.34 / Android 401034** completato con setup Windows e APK firmato. Firma v2/v3 stabile, allineamento, versione e checksum verificati; eseguibile dei collegamenti aggiornato con copia della precedente versione. Log in `builds/releases/0.4.1.34/logs/`.
+
+## Costi e pulsanti della difesa — build 0.4.1.35
+
+Potenzia è disabilitato quando mancano monete o provviste, compreso il budget protetto del tutorial. Ripara richiede anch'esso entrambe le risorse e un cancello danneggiato. Prezzo e disponibilità si aggiornano a dialogo aperto quando cambiano risorse, danni o livello. Dettagli: [DIFESA_COSTI_0.4.1.35.md](DIFESA_COSTI_0.4.1.35.md).
+
+Passano **192 controlli dedicati del sorgente e 192 del pacchetto Windows con OpenGL**, con input effettivo su quattro profili e tre scale UI. Passano inoltre **880 controlli UX**, **90 del tutorial**, **87 delle risorse Windows** e **41 dell'APK**. Nessun fallimento. Il test del tutorial ora verifica l'intervallo degli arrivi adeguato al primo cittadino presente, invece del precedente limite per rifugio vuoto. Nessun cambiamento alle regole degli arrivi.
+
+Setup Windows e APK **0.4.1.35 / Android 401035** generati e verificati: firma v2/v3 stabile, allineamento, versione e checksum corretti. Eseguibile dei collegamenti aggiornato con backup della versione precedente. Log in `builds/releases/0.4.1.35/logs/`. Dati di prova isolati; layout Android simulati sul computer, senza nuovo collaudo su Pixel fisico.
