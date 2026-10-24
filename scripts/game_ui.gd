@@ -10,6 +10,7 @@ const ArmoryPanel = preload("res://scripts/armory_panel.gd")
 const PhonePages = preload("res://scripts/phone_pages.gd")
 const BuildPanel = preload("res://scripts/build_panel.gd")
 const ConstructionPanel = preload("res://scripts/construction_panel.gd")
+const CitizenEquipmentPanel = preload("res://scripts/citizen_equipment_panel.gd")
 const SurvivorCatalog = preload("res://scripts/survivor_catalog.gd")
 const PURCHASE_PANELS = ["build","building","citizens","citizen_equipment","assignment","job_select","gate","armory","weapon_details","expeditions"]
 
@@ -98,6 +99,7 @@ var bindings: Array = []
 var selected_members: Array = []
 var selected_zone: int = 0
 var expedition_step: int = 0
+var _equipment_from_expedition: bool = false
 var toast_stack: VBoxContainer
 var damage_overlay: ColorRect
 var _hud_clock: float = 0.0
@@ -1758,34 +1760,29 @@ func _show_citizens() -> void:
 		col.add_child(_copy("Il rifugio è silenzioso. Accogli i superstiti al cancello per ricominciare."))
 	col.add_child(_button("Vai al cancello  →",_gate_focus,true))
 
-func _show_citizen_equipment(cid: int) -> void:
-	var citizen: Dictionary = _citizen(cid)
-	if citizen.is_empty(): return
-	var col: VBoxContainer = _open("citizen_equipment","Pronto per partire",str(citizen.name).to_upper()+"  /  EQUIPAGGIAMENTO",cid)
-	_citizen_name(col,citizen)
-	col.add_child(_copy("Scegli un'arma già sbloccata nell'armeria. L'equipaggiamento aiuta il cittadino durante le spedizioni.",16))
-	for key: String in ["pistol","shotgun","sniper","smg"]:
-		if not Game.WEAPONS.has(key): continue
-		var owned: bool = Game.owned_weapons.has(key)
-		var equipped: bool = str(citizen.get("weapon","pistol"))==key
-		var card: VBoxContainer = _card(col,SAGE if equipped else BORDER)
-		var row: HBoxContainer = _hbox(16)
-		row.add_child(_weapon_icon(key))
-		var info: VBoxContainer = _vbox(3)
-		info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		info.add_child(_label(str(Game.WEAPONS[key].name),21,TEXT,true))
-		info.add_child(_copy("Equipaggiata per la prossima spedizione." if equipped else "Disponibile nel rifugio." if owned else "Sblocca quest'arma nell'armeria per poterla assegnare.",14,SAGE if equipped else MUTED))
-		row.add_child(info)
-		var equip: Button = _button("In uso" if equipped else "Equipaggia" if owned else "Da sbloccare",_equip_citizen.bind(cid,key),owned and not equipped,true)
-		equip.disabled = equipped or not owned or bool(citizen.get("away",false))
-		row.add_child(equip)
-		card.add_child(row)
-	col.add_child(_button("Sblocca altre armi nell'armeria  →",_show_armory,false,true))
-	_fixed_actions().add_child(_button("← Torna ai cittadini",_return_to_citizens,false,true))
+func _show_citizen_equipment(cid: int, from_expedition: bool=false) -> void:
+	_equipment_from_expedition = from_expedition
+	CitizenEquipmentPanel.show_panel(self,cid)
 
 func _equip_citizen(cid: int, key: String) -> void:
 	Game.equip_citizen(cid,key)
-	_show_citizen_equipment(cid)
+	_show_citizen_equipment(cid,_equipment_from_expedition)
+
+func _buy_citizen_weapon(cid: int, key: String) -> void:
+	Game.buy_citizen_weapon(cid,key)
+	_show_citizen_equipment(cid,_equipment_from_expedition)
+
+func _buy_citizen_ammo(cid: int, key: String) -> void:
+	Game.buy_citizen_ammo(cid,key)
+	_show_citizen_equipment(cid,_equipment_from_expedition)
+
+func _return_from_equipment() -> void:
+	if _equipment_from_expedition:
+		expedition_step = 2
+		_restore_scroll_key = _panel_key("expeditions",2)
+		_show_expeditions(true)
+	else:
+		_return_to_citizens()
 
 func _heal(cid: int) -> void:
 	Game.heal_citizen(cid)
@@ -1908,8 +1905,8 @@ func _reject_visitor(id: int) -> void:
 	Game.reject_visitor(id)
 	_close_modal()
 
-func _show_expeditions() -> void:
-	ExpeditionPanel.show_panel(self)
+func _show_expeditions(preserve_step: bool=false) -> void:
+	ExpeditionPanel.show_panel(self,preserve_step)
 
 func _set_expedition_step(step: int) -> void:
 	expedition_step = clampi(step,0,2)
@@ -2027,8 +2024,9 @@ func show_help() -> void:
 		["02","Fai entrare la vita","Tocca i superstiti al cancello, controlla talenti e segni di contagio. Gli zombie li lasciano in pace. Chi viene rifiutato riparte a piedi. Le case aumentano i letti disponibili."],
 		["03","Rimetti in moto i negozi","Apri un edificio e assegna fino a 3 lavoratori. Avvia un rifornimento, attendi e tocca Riempi gli scaffali. Le vendite generano monete nel tempo."],
 		["04","Trova il talento giusto","Ogni cittadino ha affinità e un lavoro ideale. Un sognatore al posto giusto aumenta lo stock del negozio. I cittadini lavorano o partono in spedizione; il militare presidia sempre la torretta."],
-		["05","Guarda oltre le mura","Le spedizioni recuperano monete, provviste e munizioni. Esamina una destinazione per confrontare costo, tempo e bottino; poi scegli da 1 a 3 cittadini. La partenza costa provviste e sospende il loro lavoro. Armi e salute aumentano la probabilità di bottino completo. Tutti tornano, ma possono perdere salute e riportare meno risorse."],
-		["06","Torna quando vuoi","Il gioco salva automaticamente. I negozi maturano vendite anche mentre sei via, fino a 8 ore. Trascina per esplorare; usa i pulsanti + / – per lo zoom e le frecce per spostare la visuale."]
+		["05","Guarda oltre le mura","Le spedizioni recuperano monete, provviste e colpi per la torretta. Esamina una destinazione per confrontare costo, ambiente, tempo e bottino; poi scegli da 1 a 3 cittadini. Alla partenza paghi provviste e consumi i colpi personali indicati. Tutti tornano, ma possono perdere salute e riportare meno risorse."],
+		["06","Una persona, la sua arma","Da Arma e munizioni compri una copia per quel cittadino, con la prima scorta inclusa. Il pompa aiuta negli spazi stretti, la precisione negli spazi aperti e il mitragliatore nelle zone affollate. La pistola è gratuita e ha colpi infiniti. Le scorte personali si comprano separatamente da quelle della torretta; la squadra mostra consumo e probabilità prima della partenza."],
+		["07","Torna quando vuoi","Il gioco salva automaticamente. I negozi maturano vendite anche mentre sei via, fino a 8 ore. Trascina per esplorare; usa i pulsanti + / – per lo zoom e le frecce per spostare la visuale."]
 	]
 	for step in steps:
 		var card: VBoxContainer = _card(col)

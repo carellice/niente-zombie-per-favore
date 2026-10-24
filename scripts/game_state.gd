@@ -18,6 +18,7 @@ const OFFLINE_CAP = 28800.0
 const GATE_X = 265.0
 const SurvivorCatalog = preload("res://scripts/survivor_catalog.gd")
 const ContentCatalog = preload("res://scripts/content_catalog.gd")
+const ExpeditionGear = preload("res://scripts/expedition_gear.gd")
 const VISITOR_SPEED = 52.0
 const TUTORIAL_WALK_SPEED = 72.0
 const CITIZEN_WALK_SPEED = 30.0
@@ -184,7 +185,8 @@ func _make_citizen() -> Dictionary:
 		"look": look, "gender": SurvivorCatalog.gender_for_look(look), "appearance": "clean", "food": _rng.randi_range(1, 9), "goods": _rng.randi_range(1, 9), "services": _rng.randi_range(1, 9),
 		"dream": dreams[_rng.randi_range(0, dreams.size() - 1)], "job": -1, "guard": false,
 		"hp": 100, "max_hp": 100, "damage": _rng.randi_range(10, 16), "precision": _rng.randi_range(75, 95),
-		"weapon": "pistol", "happiness": _rng.randi_range(72, 95), "away": false, "quirk": QUIRKS[_rng.randi_range(0, QUIRKS.size() - 1)]
+		"weapon": "pistol", "personal_weapons":["pistol"], "personal_ammo":{},
+		"happiness": _rng.randi_range(72, 95), "away": false, "quirk": QUIRKS[_rng.randi_range(0, QUIRKS.size() - 1)]
 	}
 
 func _outside_civilians() -> Array[Dictionary]:
@@ -1077,25 +1079,62 @@ func buy_ammo() -> bool:
 
 func equip_citizen(citizen_id: int, key: String) -> bool:
 	var citizen = get_citizen(citizen_id)
-	if citizen.is_empty() or citizen.get("away", false) or not owned_weapons.has(key):
+	if citizen.is_empty() or citizen.get("away", false) or not citizen.get("personal_weapons",["pistol"]).has(key):
 		return false
 	citizen["weapon"] = key
 	toast.emit(citizen["name"] + " ha equipaggiato " + WEAPONS[key]["name"] + ".")
 	_commit()
 	return true
 
-func expedition_power(ids: Array) -> float:
+func citizen_gear_preview(citizen_id: int, key: String, zone_index: int=-1) -> Dictionary:
+	var citizen: Dictionary = get_citizen(citizen_id)
+	if citizen.is_empty() or not ExpeditionGear.WEAPONS.has(key): return {"valid":false}
+	var definition: Dictionary = ExpeditionGear.WEAPONS[key]
+	var owned: bool = citizen.get("personal_weapons",["pistol"]).has(key)
+	var rounds: int = int(citizen.get("personal_ammo",{}).get(key,0))
+	var zone: Dictionary = zones[zone_index] if zone_index>=0 and zone_index<zones.size() else {}
+	var required: int = ExpeditionGear.required_ammo(key,zone)
+	var available: bool = not bool(citizen.get("away",false))
+	return {"valid":true,"owned":owned,"equipped":str(citizen.weapon)==key,"ammo":rounds,"required":required,
+		"factor":ExpeditionGear.multiplier(key,zone),"ready":owned and (key=="pistol" or rounds>=required),
+		"can_buy":available and not owned and coins>=int(definition.cost) and supplies>=int(definition.supplies) and _can_spend_optional_coins(int(definition.cost),false),
+		"can_refill":available and owned and key!="pistol" and rounds<=ExpeditionGear.MAX_AMMO-int(definition.pack) and coins>=int(definition.ammo_cost) and supplies>=int(definition.ammo_supplies) and _can_spend_optional_coins(int(definition.ammo_cost),false)}
+
+func buy_citizen_weapon(citizen_id: int, key: String) -> bool:
+	var preview: Dictionary = citizen_gear_preview(citizen_id,key)
+	if not preview.get("can_buy",false): return false
+	var citizen: Dictionary = get_citizen(citizen_id)
+	var definition: Dictionary = ExpeditionGear.WEAPONS[key]
+	coins -= int(definition.cost)
+	supplies -= int(definition.supplies)
+	citizen.personal_weapons.append(key)
+	citizen.personal_ammo[key] = int(definition.pack)
+	citizen.weapon = key
+	toast.emit("%s: %s personale. Munizioni incluse: %d %s." % [citizen.name,WEAPONS[key].name,int(definition.pack),definition.unit])
+	sfx.emit("ready")
+	_commit()
+	return true
+
+func buy_citizen_ammo(citizen_id: int, key: String) -> bool:
+	var preview: Dictionary = citizen_gear_preview(citizen_id,key)
+	if not preview.get("can_refill",false): return false
+	var citizen: Dictionary = get_citizen(citizen_id)
+	var definition: Dictionary = ExpeditionGear.WEAPONS[key]
+	coins -= int(definition.ammo_cost)
+	supplies -= int(definition.ammo_supplies)
+	citizen.personal_ammo[key] = int(preview.ammo)+int(definition.pack)
+	toast.emit("%s: +%d %s personali." % [citizen.name,int(definition.pack),definition.unit])
+	sfx.emit("ready")
+	_commit()
+	return true
+
+func expedition_power(ids: Array, zone_index: int=-1) -> float:
 	var power = 0.0
 	for citizen_id in ids:
 		var citizen = get_citizen(int(citizen_id))
 		if not citizen.is_empty():
-			var factor = 1.0
-			if citizen.get("weapon", "pistol") == "shotgun":
-				factor = 1.65
-			elif citizen.get("weapon", "pistol") == "sniper":
-				factor = 2.4
-			elif citizen.get("weapon", "pistol") == "smg":
-				factor = 1.95
+			var gear: Dictionary = citizen_gear_preview(int(citizen.id),str(citizen.get("weapon","pistol")),zone_index)
+			var factor: float = float(gear.factor) if gear.get("ready",false) else 1.0
 			power += (float(citizen.get("damage", 12)) + float(citizen["services"]) * 0.7 + float(citizen["goods"]) * 0.35) * factor * float(citizen["hp"]) / 100.0
 	return power
 
@@ -1114,7 +1153,16 @@ func expedition_preview(zone_index: int, ids: Array) -> Dictionary:
 		var citizen: Dictionary = get_citizen(id)
 		if citizen.is_empty() or citizen.get("away",false) or members.has(id): team_valid = false
 		else: members.append(id)
-	var power: float = expedition_power(members)
+	var power: float = expedition_power(members,zone_index)
+	var loadout: Array[Dictionary] = []
+	var ammo_reason: String = ""
+	for id: int in members:
+		var citizen: Dictionary = get_citizen(id)
+		var key: String = str(citizen.get("weapon","pistol"))
+		var gear: Dictionary = citizen_gear_preview(id,key,zone_index)
+		loadout.append({"id":id,"name":str(citizen.name),"weapon":key,"ammo":int(gear.get("required",0))})
+		if not gear.get("ready",false) and ammo_reason.is_empty():
+			ammo_reason = "%s: rifornisci l'arma personale oppure equipaggia la pistola gratuita." % citizen.name
 	var chance: float = clampf(0.35+power/float(zone.threat)*0.45,0.35,1.0) if not members.is_empty() else 0.0
 	var full: Dictionary = {}
 	var reduced: Dictionary = {}
@@ -1126,9 +1174,11 @@ func expedition_preview(zone_index: int, ids: Array) -> Dictionary:
 	if expedition.get("status","idle")!="idle": reason = "C'è già una squadra fuori dal rifugio."
 	elif ids.is_empty() or ids.size()>3: reason = "Scegli da 1 a 3 cittadini."
 	elif not team_valid: reason = "Alcune persone selezionate non sono disponibili."
+	elif not ammo_reason.is_empty(): reason = ammo_reason
 	elif supplies<cost: reason = "Servono %d provviste per partire; ne hai %d." % [cost,supplies]
 	return {"valid":true,"can_depart":reason.is_empty(),"reason":reason,"members":members,"power":power,"chance":chance,
 		"cost":cost,"duration":float(zone.duration),"full_rewards":full,"reduced_rewards":reduced,
+		"terrain":ExpeditionGear.terrain(zone),"loadout":loadout,"loadout_ready":ammo_reason.is_empty(),
 		"full_net_supplies":int(full.supplies)-cost,"reduced_net_supplies":int(reduced.supplies)-cost,
 		"success_damage":EXPEDITION_SUCCESS_DAMAGE,"failure_damage":EXPEDITION_FAILURE_DAMAGE,"health_floor":EXPEDITION_HEALTH_FLOOR}
 
@@ -1152,6 +1202,14 @@ func start_expedition(zone_index: int, ids: Array) -> bool:
 		toast.emit("Servono " + str(cost) + " provviste per partire.")
 		return false
 	var preview: Dictionary = expedition_preview(zone_index,members)
+	if not preview.can_depart:
+		toast.emit(str(preview.reason))
+		return false
+	# Charge personal rounds exactly once, atomically with departure provisions.
+	for entry: Dictionary in preview.loadout:
+		if int(entry.ammo)>0:
+			var citizen: Dictionary = get_citizen(int(entry.id))
+			citizen.personal_ammo[entry.weapon] = int(citizen.personal_ammo[entry.weapon])-int(entry.ammo)
 	supplies -= cost
 	var power: float = preview.power
 	var chance: float = preview.chance
@@ -1159,7 +1217,8 @@ func start_expedition(zone_index: int, ids: Array) -> bool:
 	expedition = {
 		"status": "running", "zone": zone_index, "name": zone["name"], "members": members,
 		"remaining": float(zone["duration"]), "duration": float(zone["duration"]), "power": power, "chance": chance,
-		"success": success, "rewards": preview.full_rewards.duplicate() if success else preview.reduced_rewards.duplicate()
+		"success": success, "rewards": preview.full_rewards.duplicate() if success else preview.reduced_rewards.duplicate(),
+		"loadout":preview.loadout.duplicate(true),"terrain":preview.terrain
 	}
 	for citizen_id in members:
 		get_citizen(int(citizen_id))["away"] = true
@@ -1365,6 +1424,7 @@ func load_game() -> bool:
 		citizen["id"] = int(citizen["id"])
 		citizen["job"] = int(citizen.get("job", -1))
 		_normalize_citizen_appearance(citizen)
+		_normalize_personal_equipment(citizen)
 		citizens.append(citizen)
 	buildings.clear()
 	for building in data["buildings"]:
@@ -1476,6 +1536,7 @@ func load_game() -> bool:
 func _normalize_outside_civilian(visitor: Dictionary) -> void:
 	visitor["id"] = int(visitor["id"])
 	visitor["citizen"]["id"] = int(visitor["citizen"]["id"])
+	_normalize_personal_equipment(visitor["citizen"])
 	var appearance = str(visitor.get("appearance", visitor["citizen"].get("appearance", "")))
 	if not appearance in ["clean", "dirty", "infected"]:
 		appearance = "infected" if bool(visitor.get("suspicious", false)) else ("dirty" if int(visitor["id"]) % 3 == 0 else "clean")
@@ -1494,6 +1555,21 @@ func _normalize_outside_civilian(visitor: Dictionary) -> void:
 func _normalize_citizen_appearance(citizen: Dictionary) -> void:
 	if not str(citizen.get("appearance", "")) in ["clean", "dirty", "infected"]:
 		citizen["appearance"] = "clean"
+
+func _normalize_personal_equipment(citizen: Dictionary) -> void:
+	# Preserve each legacy equipped weapon as a personal copy, once only.
+	if not citizen.has("personal_weapons"):
+		var key: String = str(citizen.get("weapon","pistol"))
+		if not WEAPONS.has(key): key = "pistol"
+		citizen.weapon = key
+		citizen.personal_weapons = ["pistol"]
+		citizen.personal_ammo = {}
+		if key!="pistol":
+			citizen.personal_weapons.append(key)
+			citizen.personal_ammo[key] = int(ExpeditionGear.WEAPONS[key].pack)
+	else:
+		for key: String in citizen.personal_ammo:
+			citizen.personal_ammo[key] = int(citizen.personal_ammo[key])
 
 func _valid_save(data: Dictionary) -> bool:
 	if not data.get("citizens") is Array or not data.get("buildings") is Array:
@@ -1525,6 +1601,11 @@ func _valid_save(data: Dictionary) -> bool:
 		return false
 	if saved_expedition.get("status", "idle") != "idle" and not saved_expedition.has_all(["remaining", "duration", "members", "rewards"]):
 		return false
+	if saved_expedition.has("loadout"):
+		if not saved_expedition.loadout is Array: return false
+		for entry: Variant in saved_expedition.loadout:
+			if not entry is Dictionary or not entry.has_all(["id","name","weapon","ammo"]): return false
+			if not WEAPONS.has(str(entry.weapon)) or not _finite_number(entry.ammo) or float(entry.ammo)<0 or float(entry.ammo)>ExpeditionGear.MAX_AMMO: return false
 	for outside_key in ["visitors", "departing_visitors"]:
 		if not data.get(outside_key, []) is Array:
 			return false
@@ -1564,7 +1645,20 @@ func _finite_number(value) -> bool:
 	return (value is int or value is float) and is_finite(float(value))
 
 func _valid_citizen(citizen) -> bool:
-	return citizen is Dictionary and citizen.has_all(["id", "name", "food", "goods", "services", "dream", "hp", "look", "job", "guard", "away", "happiness", "weapon"])
+	if not citizen is Dictionary or not citizen.has_all(["id", "name", "food", "goods", "services", "dream", "hp", "look", "job", "guard", "away", "happiness", "weapon"]): return false
+	if citizen.has("personal_weapons")!=citizen.has("personal_ammo"): return false
+	if not citizen.has("personal_weapons"): return true
+	if not citizen.personal_weapons is Array or not citizen.personal_ammo is Dictionary: return false
+	if not citizen.personal_weapons.has("pistol") or not citizen.personal_weapons.has(str(citizen.weapon)): return false
+	var seen: Dictionary = {}
+	for key: Variant in citizen.personal_weapons:
+		if not key is String or not WEAPONS.has(key) or seen.has(key): return false
+		seen[key] = true
+	for key: Variant in citizen.personal_ammo:
+		if key=="pistol" or not seen.has(key): return false
+		var value: Variant = citizen.personal_ammo[key]
+		if not _finite_number(value) or float(value)<0 or float(value)>ExpeditionGear.MAX_AMMO or float(value)!=floorf(float(value)): return false
+	return true
 
 func reset_game() -> void:
 	_new_game()

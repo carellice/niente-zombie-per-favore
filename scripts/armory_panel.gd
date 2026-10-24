@@ -5,7 +5,7 @@ static func _caption(key: String) -> String:
 	if Game.weapon==key: return "In uso"
 	if Game.owned_weapons.has(key): return "Equipaggia"
 	var cost: Dictionary = Game.WEAPONS[key]
-	return "Sblocca · %d monete\n+ %d provviste" % [int(cost.cost),int(cost.supplies)]
+	return "Torretta · %d monete\n+ %d provviste" % [int(cost.cost),int(cost.supplies)]
 
 static func _available(key: String) -> bool:
 	var cost: Dictionary = Game.WEAPONS[key]
@@ -17,7 +17,7 @@ static func show_catalog(ui: CanvasLayer) -> void:
 		return
 	ui.set_selected_tab("armory")
 	var col: VBoxContainer = ui._open("armory","Meglio essere preparati","ARMERIA DEL RIFUGIO")
-	col.add_child(ui._copy("Tocca un'arma per vedere danno, portata e cadenza di tiro.",16))
+	col.add_child(ui._copy("Armi e munizioni per il militare sulla torretta. I cittadini comprano copie e scorte personali da Cittadini → Equipaggiamento o dalla squadra di una spedizione.",16))
 	for key: String in ["pistol","shotgun","sniper","smg"]:
 		var copy: Array = ui.WEAPON_COPY[key]
 		var active: bool = Game.weapon==key
@@ -78,6 +78,7 @@ static func show_catalog(ui: CanvasLayer) -> void:
 static func _show_phone(ui: CanvasLayer) -> void:
 	ui.set_selected_tab("armory")
 	var col: VBoxContainer = ui._open("armory","Armeria","ARMERIA DEL RIFUGIO")
+	col.add_child(ui._copy("Questi acquisti servono alla torretta. Per le spedizioni apri Arma e munizioni sulla scheda del cittadino.",18,ui.SAGE))
 	var ammo: VBoxContainer = ui._card(col,ui.SAGE)
 	var row: HBoxContainer = ui._hbox(16)
 	row.add_child(ui._weapon_icon("ammo",Vector2(60,52)))
@@ -143,7 +144,7 @@ static func show_details(ui: CanvasLayer, key: String) -> void:
 	var facts: VBoxContainer = ui._card(col,ui.SAGE)
 	facts.add_child(ui._copy(str(copy[2]),20,ui.SAGE))
 	facts.add_child(ui._copy("Danno %d · %.2f s tra i colpi" % [int(definition.damage),float(definition.cooldown)],18,ui.TEXT))
-	facts.add_child(ui._copy("Colpi infiniti." if key=="pistol" else "Usa le munizioni condivise del rifugio: %d colpi disponibili." % Game.ammo,16))
+	facts.add_child(ui._copy("Colpi infiniti." if key=="pistol" else "Scorta della torretta: %d colpi disponibili. I cittadini hanno munizioni personali." % Game.ammo,16))
 	col.add_child(ui._copy("Il contorno dorato degli zombie indica quando sono a portata. Un bersaglio lontano richiede un'arma con più portata.",16))
 	var footer: VBoxContainer = ui._fixed_actions()
 	var actions: HBoxContainer = ui._hbox(12)

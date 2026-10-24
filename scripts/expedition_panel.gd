@@ -30,7 +30,7 @@ static func _loot(ui: CanvasLayer, parent: Node, rewards: Dictionary, title: Str
 	var card: VBoxContainer = ui._card(parent,ui.SAGE)
 	_heading(ui,card,title)
 	var grid: GridContainer = _grid(card)
-	for entry: Array in [["coins","coin","monete"],["supplies","crate","provviste"],["ammo","ammo","munizioni"],["gems","bill","banconote"]]:
+	for entry: Array in [["coins","coin","monete"],["supplies","crate","provviste"],["ammo","ammo","colpi torretta"],["gems","bill","banconote"]]:
 		var row: HBoxContainer = ui._hbox(10)
 		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(ui._weapon_icon("ammo",Vector2(36,34)) if entry[0]=="ammo" else ui._icon(entry[1],34))
@@ -53,8 +53,8 @@ static func _fact(ui: CanvasLayer, parent: Node, icon: String, title: String, va
 	row.add_child(content)
 	card.add_child(row)
 
-static func show_panel(ui: CanvasLayer) -> void:
-	if ui.panel_kind!="expeditions": ui.expedition_step = 0
+static func show_panel(ui: CanvasLayer, preserve_step: bool=false) -> void:
+	if ui.panel_kind!="expeditions" and not preserve_step: ui.expedition_step = 0
 	ui.set_selected_tab("expeditions")
 	var status: String = str(Game.expedition.get("status","idle"))
 	var col: VBoxContainer = ui._open("expeditions","Spedizioni","ESPLORA OLTRE LE MURA",ui.expedition_step if status=="idle" else -1)
@@ -94,6 +94,7 @@ static func _show_destinations(ui: CanvasLayer, col: VBoxContainer) -> void:
 		var name: Label = _heading(ui,card,str(zone.name))
 		name.custom_minimum_size.y = 58
 		card.add_child(ui._copy("Tempo fuori: %s · Difficoltà: %s" % [ui._time(float(zone.duration)),_difficulty(int(zone.threat))],18,ui.SAGE))
+		card.add_child(ui._copy(str(Game.ExpeditionGear.TERRAINS[Game.ExpeditionGear.terrain(zone)]),18,ui.GOLD))
 		card.add_child(ui._copy("Bottino completo: %d monete e %d provviste, più munizioni e banconote." % [int(zone.coins),int(zone.supplies)],18))
 		var space: Control = Control.new()
 		space.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -109,10 +110,11 @@ static func _show_details(ui: CanvasLayer, col: VBoxContainer) -> void:
 	var preview: Dictionary = Game.expedition_preview(ui.selected_zone,[])
 	_heading(ui,col,str(zone.name))
 	col.add_child(ui._copy(str(zone.description),18))
+	col.add_child(ui._copy("Ambiente: "+str(Game.ExpeditionGear.TERRAINS[preview.terrain])+". "+_recommended(str(preview.terrain)),19,ui.SAGE))
 	var facts: GridContainer = _grid(col)
 	_fact(ui,facts,"compass","Tempo di assenza",ui._time(float(preview.duration)))
 	_fact(ui,facts,"crate","Paghi solo alla partenza","%d provviste" % int(preview.cost))
-	col.add_child(ui._copy("Non paghi monete e non consumi le munizioni del cancello. Esaminare la zona e preparare la squadra è gratuito.",18,ui.SAGE))
+	col.add_child(ui._copy("Alla partenza paghi provviste e consumi i colpi personali della squadra. Le munizioni della torretta restano separate; quelle trovate nel bottino riforniscono la torretta. Esaminare la zona è gratuito.",18,ui.SAGE))
 	_loot(ui,col,preview.full_rewards,"Se ottieni il bottino completo")
 	col.add_child(ui._copy("Guadagno netto di provviste: %s (bottino meno costo di partenza)." % _signed(int(preview.full_net_supplies)),18,ui.SAGE))
 	var downside: VBoxContainer = ui._card(col,ui.GOLD)
@@ -123,28 +125,42 @@ static func _show_details(ui: CanvasLayer, col: VBoxContainer) -> void:
 	var care: VBoxContainer = ui._card(col)
 	_heading(ui,care,"Che cosa comporta per il rifugio")
 	care.add_child(ui._copy("I cittadini scelti non lavorano finché sono fuori. Rientrano sempre, con fino a %d punti salute in meno se riescono, oppure %d se incontrano difficoltà; la salute non scende sotto %d." % [int(preview.success_damage),int(preview.failure_damage),int(preview.health_floor)],18))
-	care.add_child(ui._copy("Salute e arma equipaggiata determinano la probabilità di bottino completo: la vedrai scegliendo la squadra. Mentre sono fuori, queste persone non richiamano zombie nel rifugio.",18,ui.SAGE))
+	care.add_child(ui._copy("Salute, arma e ambiente determinano la probabilità di bottino completo: la vedrai scegliendo la squadra. Controlla le scorte personali prima di partire. Mentre sono fuori, queste persone non richiamano zombie nel rifugio.",18,ui.SAGE))
+
+static func _recommended(terrain: String) -> String:
+	match terrain:
+		"close": return "Consigliato: fucile a pompa."
+		"open": return "Consigliato: fucile di precisione."
+		"crowded": return "Consigliato: mitragliatore."
+	return "Mitragliatore versatile; la pistola evita ogni costo di munizioni."
+
+static func _chance_text(preview: Dictionary) -> String:
+	if preview.members.is_empty(): return "Seleziona la squadra per vedere la probabilità."
+	if not preview.loadout_ready: return "Munizioni personali insufficienti: rifornisci oppure scegli la pistola."
+	return "Probabilità di bottino completo: %d%%" % roundi(float(preview.chance)*100)
 
 static func _show_team(ui: CanvasLayer, col: VBoxContainer) -> void:
 	var zone: Dictionary = Game.zones[ui.selected_zone]
 	var initial: Dictionary = Game.expedition_preview(ui.selected_zone,ui.selected_members)
 	_heading(ui,col,str(zone.name))
+	col.add_child(ui._copy(str(Game.ExpeditionGear.TERRAINS[initial.terrain])+" · "+_recommended(str(initial.terrain)),20,ui.SAGE))
 	col.add_child(ui._copy("%s fuori · Costo: %d provviste · Scegli da 1 a 3 cittadini." % [ui._time(float(zone.duration)),Game.expedition_cost(ui.selected_zone)],18,ui.GOLD))
 	var outlook: VBoxContainer = ui._card(col,ui.SAGE)
-	var chance: Label = ui._copy("Seleziona la squadra per vedere la probabilità." if initial.members.is_empty() else "Probabilità di bottino completo: %d%%" % roundi(float(initial.chance)*100),24,ui.SAGE)
+	var chance: Label = ui._copy(_chance_text(initial),24,ui.SAGE)
 	chance.name = "ExpeditionChance"
 	outlook.add_child(chance)
 	ui.bindings.append([chance,func(label: Label) -> void:
 		var preview: Dictionary = Game.expedition_preview(ui.selected_zone,ui.selected_members)
-		label.text = "Seleziona la squadra per vedere la probabilità." if preview.members.is_empty() else "Probabilità di bottino completo: %d%%" % roundi(float(preview.chance)*100)
+		label.text = _chance_text(preview)
 	])
 	var progress: ProgressBar = ui._progress(ui.SAGE,10)
-	progress.value = float(initial.chance)*100.0
+	progress.value = float(initial.chance)*100.0 if initial.loadout_ready else 0.0
 	outlook.add_child(progress)
 	ui.bindings.append([progress,func(bar: ProgressBar) -> void:
-		bar.value = float(Game.expedition_preview(ui.selected_zone,ui.selected_members).chance)*100.0
+		var preview: Dictionary = Game.expedition_preview(ui.selected_zone,ui.selected_members)
+		bar.value = float(preview.chance)*100.0 if preview.loadout_ready else 0.0
 	])
-	outlook.add_child(ui._copy("Armi migliori e cittadini in salute aumentano le possibilità. Chi parte sospende il proprio lavoro fino al rientro.",18))
+	outlook.add_child(ui._copy("Confronta la probabilità anche con la pistola: se resta al 100%, puoi risparmiare colpi. Chi parte sospende il lavoro fino al rientro.",18))
 	var available: int = 0
 	for citizen: Dictionary in Game.citizens:
 		if citizen.get("away",false): continue
@@ -159,20 +175,32 @@ static func _show_team(ui: CanvasLayer, col: VBoxContainer) -> void:
 		info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		ui._citizen_name(info,citizen,23)
 		info.add_child(ui._copy("%s · Salute %d%%" % [ui._work_name(citizen),int(citizen.hp)],18))
-		info.add_child(ui._copy("Potenza in spedizione: %.0f" % Game.expedition_power([id]),18,ui.SAGE))
+		info.add_child(ui._copy("Potenza qui: %.0f" % Game.expedition_power([id],ui.selected_zone),18,ui.SAGE))
+		var key: String = str(citizen.get("weapon","pistol"))
+		var gear: Dictionary = Game.citizen_gear_preview(id,key,ui.selected_zone)
+		info.add_child(ui._copy(str(Game.WEAPONS[key].name)+(" · Colpi infiniti" if key=="pistol" else " · Scorta %d / Consumo %d" % [int(gear.ammo),int(gear.required)]),18,ui.SAGE if gear.ready else ui.RED))
 		row.add_child(info)
 		row.add_child(ui._weapon_icon(str(citizen.get("weapon","pistol")),Vector2(62,44)))
 		var select: Button = ui._button("✓ In squadra" if chosen else "Seleziona",ui._select_member.bind(id),chosen,true)
+		var actions: HBoxContainer = ui._hbox(12)
+		select.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		select.custom_minimum_size.x = 155
 		select.disabled = not chosen and ui.selected_members.size()>=3
-		row.add_child(select)
 		card.add_child(row)
+		actions.add_child(select)
+		var equipment: Button = ui._button("Arma e munizioni",ui._show_citizen_equipment.bind(id,true),false,true)
+		equipment.name = "TeamEquipment_"+str(id)
+		equipment.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		actions.add_child(equipment)
+		card.add_child(actions)
 	if available==0:
 		col.add_child(ui._copy("Nessun cittadino disponibile. Accogli nuove persone al cancello o attendi il rientro della squadra già fuori.",22,ui.GOLD))
 
 static func _summary(ui: CanvasLayer) -> String:
 	var preview: Dictionary = Game.expedition_preview(ui.selected_zone,ui.selected_members)
-	return "%d / 3 cittadini · Costo alla partenza: %d provviste" % [preview.members.size(),int(preview.cost)]
+	var rounds: int = 0
+	for entry: Dictionary in preview.loadout: rounds += int(entry.ammo)
+	return "%d / 3 cittadini · Partenza: %d provviste e %d %s" % [preview.members.size(),int(preview.cost),rounds,"colpo personale" if rounds==1 else "colpi personali"]
 
 static func _show_controls(ui: CanvasLayer) -> void:
 	if ui.expedition_step==0: return
@@ -228,6 +256,8 @@ static func _show_running(ui: CanvasLayer, col: VBoxContainer) -> void:
 	var names: PackedStringArray = []
 	for id: Variant in exp.get("members",[]): names.append(str(Game.get_citizen(int(id)).get("name","")))
 	card.add_child(ui._copy("In squadra: "+", ".join(names),19,ui.TEXT))
+	for entry: Dictionary in exp.get("loadout",[]):
+		card.add_child(ui._copy("%s · %s · Scorta personale usata: %s" % [entry.name,Game.WEAPONS[str(entry.weapon)].name,Game.ExpeditionGear.ammo_label(str(entry.weapon),int(entry.ammo))],18,ui.SAGE))
 	col.add_child(ui._copy("Queste persone riprenderanno il lavoro al rientro. Potrai ritirare il bottino dalla stessa pagina, anche se torni più tardi.",18))
 	if exp.has("zone"):
 		var preview: Dictionary = Game.expedition_preview(int(exp.zone),[])

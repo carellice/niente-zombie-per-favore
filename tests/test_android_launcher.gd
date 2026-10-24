@@ -39,7 +39,7 @@ func run() -> void:
 	var boot: Image = Image.new()
 	expect(boot.load_png_from_buffer(apk.read_file("assets/assets/android/icon_foreground.png"))==OK,"Native boot splash PNG shipped unmodified")
 	expect(apk.file_exists("assets/loading.tscn.remap") and apk.file_exists("assets/scripts/loading_screen.gdc"),"Real loading scene and script shipped")
-	for script: String in ["armory_panel","build_panel","expedition_panel","phone_pages","citizen_roaming","construction_panel","construction_visual"]:
+	for script: String in ["armory_panel","build_panel","expedition_panel","phone_pages","citizen_roaming","construction_panel","construction_visual","expedition_gear","citizen_equipment_panel"]:
 		expect(apk.file_exists("assets/scripts/"+script+".gdc"),"New UI controller shipped: "+script)
 	var cherry_import: ConfigFile = ConfigFile.new()
 	var imported: bool = cherry_import.parse(apk.read_file("assets/assets/art/cherries.png.import").get_string_from_utf8())==OK

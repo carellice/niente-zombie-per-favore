@@ -108,7 +108,7 @@ func run() -> void:
 	ui._show_citizen_equipment(int(game.citizens[3].id))
 	await settle()
 	expect(icon_count(ui.modal)==4,"Equipment panel has one distinct icon per weapon")
-	ui._equip_citizen(int(game.citizens[3].id),"smg")
+	ui._buy_citizen_weapon(int(game.citizens[3].id),"smg")
 	await settle()
 	expect(game.citizens[3].weapon=="smg","SMG can be equipped for a citizen")
 	await capture("res://docs/REVISIONE-EQUIPAGGIAMENTO.png")

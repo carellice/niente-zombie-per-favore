@@ -119,7 +119,7 @@ func test_preview_and_departure() -> void:
 	expect(model._rng.state==state and model.supplies==supply and not model.citizens[0].away,"Preview neither spends resources nor rolls the outcome")
 	model.citizens[0].hp = 100
 	var healthy: Dictionary = model.expedition_preview(8,[id])
-	model.citizens[0].weapon = "sniper"
+	expect(model.buy_citizen_weapon(id,"sniper"),"Expedition equipment is purchased for its specific citizen")
 	var equipped: Dictionary = model.expedition_preview(8,[id])
 	expect(healthy.chance>preview.chance and equipped.chance>healthy.chance,"Health and equipment improve the displayed probability")
 	for ids: Array in [[],[id,id],[99999],[id,model.citizens[1].id,model.citizens[2].id,model.citizens[3].id]]:
