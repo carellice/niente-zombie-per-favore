@@ -12,6 +12,15 @@ const OPTIONS = [
 	["tailor","BENI","Vestiti e zaini da vendere. Lavoratori con affinità BENI."]]
 static var _previews: Dictionary = {}
 
+static func _count_text(kind: String) -> String:
+	var ready: int = 0
+	var pending: int = 0
+	for building: Dictionary in Game.buildings:
+		if str(building.type)!=kind: continue
+		if Game.is_under_construction(building): pending += 1
+		else: ready += 1
+	return "Già costruiti: %d" % ready+(" · In costruzione: %d" % pending if pending>0 else "")
+
 static func _art(kind: String) -> Texture2D:
 	if _previews.has(kind): return _previews[kind]
 	var path: String = "res://assets/art/settlement.png"
@@ -69,6 +78,10 @@ static func show_catalog(ui: CanvasLayer) -> void:
 		titles.add_child(title)
 		header.add_child(titles)
 		card.add_child(header)
+		var count: Label = ui._copy(_count_text(kind),18,ui.SAGE)
+		count.name = "BuildCount_"+kind
+		card.add_child(count)
+		ui.bindings.append([count,func(label: Label) -> void: label.text = _count_text(kind)])
 		var description: Label = ui._copy(entry[2],18)
 		description.custom_minimum_size.y = 64 if DeviceLayout.android_phone() else 48
 		card.add_child(description)

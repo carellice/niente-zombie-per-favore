@@ -13,6 +13,7 @@ const TargetOutline = preload("res://scripts/target_outline.gd")
 const BuildingFeedback = preload("res://scripts/building_feedback.gd")
 const CitizenRoaming = preload("res://scripts/citizen_roaming.gd")
 const ConstructionVisual = preload("res://scripts/construction_visual.gd")
+const BuildingSignage = preload("res://scripts/building_signage.gd")
 const CITY_START = 600.0
 const LOT_STEP = 330.0
 const EXPANSION_RECT = Rect2(20.0, -210.0, 240.0, 210.0)
@@ -195,6 +196,8 @@ func _load_art() -> void:
 	for texture: Texture2D in extra_building_art.values():
 		feedback_textures.append(texture)
 	building_feedback.prepare(feedback_textures)
+	for kind: String in Game.BUILDING_NAMES:
+		BuildingSignage.texture(kind)
 
 func _sheet(path: String, columns: int, rows: int) -> Array[Texture2D]:
 	var result: Array[Texture2D] = []
@@ -649,7 +652,7 @@ func _update_hover(pos: Vector2) -> void:
 		hover = "%s:%d" % [str(picked.kind), int(picked.id)]
 	else:
 		for b: Dictionary in Game.buildings:
-			if _building_rect(int(b.id)).has_point(pos):
+			if _building_rect(int(b.id)).has_point(pos) or _building_logo_rect(int(b.id)).has_point(pos):
 				hover = "building:%d" % int(b.id)
 		if _gate_rect().has_point(pos):
 			hover = "gate"
@@ -694,7 +697,7 @@ func _world_click(pos: Vector2) -> void:
 		ui.show_gate()
 		return
 	for b: Dictionary in Game.buildings:
-		if _building_rect(int(b.id)).grow(6.0).has_point(pos):
+		if _building_rect(int(b.id)).grow(6.0).has_point(pos) or _building_logo_rect(int(b.id)).has_point(pos):
 			building_feedback.click(int(b.id))
 			Game.sfx.emit("ui")
 			ui.show_building(int(b.id))
@@ -722,6 +725,18 @@ func _building_index(id: int) -> int:
 			return i
 	return 0
 
+func _building_logo_rect(id: int) -> Rect2:
+	return BuildingSignage.bounds(self,id)
+
+func _draw_building_logo(building: Dictionary) -> void:
+	BuildingSignage.draw_sign(self,building)
+
+func _draw_building_logos() -> void:
+	for index: int in range(Game.buildings.size()):
+		var x: float = _sx(_city_start()+index*_lot_step())
+		if x<=size.x+80.0 and x+315.0*_building_zoom()>=-80.0:
+			_draw_building_logo(Game.buildings[index])
+
 func _draw() -> void:
 	if body == null:
 		return
@@ -743,6 +758,7 @@ func _draw() -> void:
 		_draw_building(building)
 	_draw_expansion()
 	_draw_lights()
+	_draw_building_logos()
 	_draw_characters()
 	# The solid checkpoint occludes arrivals at the boundary. Guards stand above it.
 	_draw_gate()
@@ -898,8 +914,7 @@ func _draw_building(b: Dictionary) -> void:
 		texture = building_art[art_index]
 	if Game.is_under_construction(b):
 		ConstructionVisual.draw_site(self,texture,Rect2(x,y-310*_building_zoom(),310*_building_zoom(),315*_building_zoom()),Game.construction_progress(b),actor_clock)
-		_text(Vector2(x+155*_building_zoom(),y+(52 if DeviceLayout.android_phone() else 38)),str(b.name).to_upper(),21,CREAM,heading,true)
-		_building_subtitle(Vector2(x+155*_building_zoom(),y+(94 if DeviceLayout.android_phone() else 62)),"CANTIERE · %s · %d%%" % [ui._time(float(b.construction_remaining)),floori(Game.construction_progress(b)*100.0)],GOLD)
+		_building_subtitle(Vector2(x+155*_building_zoom(),y+(52 if DeviceLayout.android_phone() else 38)),"CANTIERE · %s · %d%%" % [ui._time(float(b.construction_remaining)),floori(Game.construction_progress(b)*100.0)],GOLD)
 		return
 	if texture != null:
 		var tint: Color = Color.WHITE
@@ -908,9 +923,6 @@ func _draw_building(b: Dictionary) -> void:
 		building_feedback.draw(self,texture,Rect2(x,y-310*_building_zoom(),310*_building_zoom(),315*_building_zoom()),tint,id)
 	else:
 		draw_rect(rect,Color("a9b89b"))
-		_text(rect.position+Vector2(20,55),str(b.name),28,INK,heading)
-	# No building signage depends on generated text being legible.
-	_text(Vector2(x+155*_building_zoom(),y+(52 if DeviceLayout.android_phone() else 38)), str(b.name).to_upper(),21,CREAM,heading,true)
 	var subtitle: String = "ALLOGGI · %d POSTI" % (5 * int(b.level))
 	var color: Color = SAGE
 	if b.type != "residence":
@@ -927,18 +939,17 @@ func _draw_building(b: Dictionary) -> void:
 				working = true
 				remaining = maxf(remaining,float(p.remaining))
 		if ready:
-			_status_bubble(Vector2(x+155*_building_zoom(),y-319*_building_zoom()),"MERCE PRONTA",SAGE)
+			subtitle += "   /   MERCE PRONTA"
 		elif working:
-			_status_bubble(Vector2(x+155*_building_zoom(),y-319*_building_zoom()),"RIFORNIMENTO · %ds" % int(remaining),GOLD)
+			subtitle += "   /   RIFORNIMENTO · %ds" % int(remaining)
+			color = GOLD
 		elif stocked:
-			_status_bubble(Vector2(x+155*_building_zoom(),y-319*_building_zoom()),"NEGOZIO APERTO",SAGE)
-		else:
-			_status_bubble(Vector2(x+155*_building_zoom(),y-319*_building_zoom()),"DA RIFORNIRE" if workers>0 else "CERCA PERSONALE",Color("d6b990"))
-		if stocked:
 			subtitle += "   /   IN VENDITA"
-		elif workers == 0:
+		else:
+			subtitle += "   /   DA RIFORNIRE" if workers>0 else ""
+		if workers == 0:
 			color = Color("c0b09a")
-	_building_subtitle(Vector2(x+155*_building_zoom(),y+(94 if DeviceLayout.android_phone() else 62)),subtitle,color)
+	_building_subtitle(Vector2(x+155*_building_zoom(),y+(52 if DeviceLayout.android_phone() else 38)),subtitle,color)
 
 func _building_subtitle(baseline: Vector2, text: String, color: Color) -> void:
 	var lines: PackedStringArray = PackedStringArray([text])

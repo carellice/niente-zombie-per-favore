@@ -3,12 +3,18 @@ extends "res://scripts/main.gd"
 var rendered_actors: Array[Dictionary] = []
 var rendered_labels: Array[String] = []
 var drawing_order: Array[String] = []
+var rendered_building_logos: Array[Dictionary] = []
 
 func _draw() -> void:
 	rendered_actors.clear()
 	rendered_labels.clear()
 	drawing_order.clear()
+	rendered_building_logos.clear()
 	super._draw()
+
+func _draw_building_logo(building: Dictionary) -> void:
+	rendered_building_logos.append({"id":int(building.id),"type":str(building.type),"rect":_building_logo_rect(int(building.id))})
+	super._draw_building_logo(building)
 
 func _draw_person(column: int, frame: int, world_x: float, base_y: float, height: float, facing_left: bool=false, ground_shadow: bool=true, walk_phase: float=-1.0, zombie: bool=false, gait_blend: float=1.0, appearance: String="clean") -> void:
 	# The permanent tower guard uses the separate static rendering path.

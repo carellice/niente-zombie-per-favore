@@ -33,6 +33,8 @@ func tap(button: Control) -> void:
 	ui.modal_scroll.ensure_control_visible(button)
 	await settle()
 	var point: Vector2 = button.get_global_transform_with_canvas()*(button.size*0.5)
+	await tap_at(point)
+func tap_at(point: Vector2) -> void:
 	for down: bool in [true,false]:
 		var touch: InputEventScreenTouch = InputEventScreenTouch.new()
 		touch.index = 0
@@ -70,7 +72,8 @@ func run() -> void:
 		layout.preview_insets = Vector4(24,6,12,8) if profile[2] else Vector4.ZERO
 		preferences.apply_settings({"interface_size":"compact","sound_enabled":false,"screen_shake":false,"fullscreen":false},false)
 		layout.refresh()
-		scene = load("res://main.tscn").instantiate()
+		scene = load(get_script().resource_path.get_base_dir().path_join("world_render_probe.gd")).new()
+		scene.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		root.add_child(scene)
 		scene.set_process(false)
 		ui = scene.ui
@@ -95,6 +98,7 @@ func run() -> void:
 			await opened()
 			var label: String = str(profile[0])+" "+size_name
 			var button: Button = ui.modal_content.find_child("BuildAction_bakery",true,false)
+			expect(ui.modal_content.find_child("BuildCount_residence",true,false).text=="Già costruiti: 1" and ui.modal_content.find_child("BuildCount_bakery",true,false).text=="Già costruiti: 0",label+": catalog counts existing buildings by type")
 			var cost: int = game.next_build_cost("bakery")
 			var duration: float = game.next_build_duration("bakery")
 			expect(button.text.contains(str(cost)+" monete") and button.text.contains(ui._time(duration)),label+": both price and duration are visible before purchase")
@@ -103,6 +107,7 @@ func run() -> void:
 			var site: Dictionary = game.buildings.back()
 			expect(site.type=="bakery" and game.is_under_construction(site) and site.construction_duration==duration,label+": real tap starts the chosen construction")
 			expect(game.coins==money-cost and game.stats.built==2,label+": start charges once without awarding completion")
+			expect(ui.modal_content.find_child("BuildCount_bakery",true,false).text=="Già costruiti: 0 · In costruzione: 1",label+": pending site is distinct from a completed building")
 			ui.show_building(int(site.id))
 			await opened()
 			var timer: Label = ui.modal_content.find_child("ConstructionCountdown",true,false)
@@ -135,8 +140,17 @@ func run() -> void:
 			ui._close_modal()
 			scene._process(0.1)
 			if size_name=="compact": await capture(str(profile[0])+"-COMPLETE")
+			await settle()
+			expect(not scene.rendered_labels.has(str(site.name).to_upper()) and scene.rendered_building_logos.any(func(value: Dictionary) -> bool: return value.id==site.id and value.type=="bakery"),label+": the painted bakery emblem replaces the old world name")
+			await tap_at(scene._building_logo_rect(int(site.id)).get_center())
+			await opened()
+			expect(ui.panel_kind=="building" and ui.panel_id==int(site.id),label+": tapping the emblem opens its own building")
+			ui._show_build()
+			await opened()
+			expect(ui.modal_content.find_child("BuildCount_bakery",true,false).text=="Già costruiti: 1",label+": completion increments the type's completed count")
 		game._is_loading = false
 	if is_instance_valid(scene): scene.queue_free()
 	await settle()
+	await create_timer(0.5).timeout
 	print("CONSTRUCTION UI: %d checks, %d failures" % [checks,failures])
 	quit(0 if failures==0 else 1)

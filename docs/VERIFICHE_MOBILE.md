@@ -227,3 +227,11 @@ Rimosse la scritta Ingresso rifugio e la barra di integrità sovrapposte alla sc
 Passano **1.696 controlli del sorgente e 1.696 del pacchetto Windows con OpenGL**: assenza della scritta nella scena, indicatore inferiore visibile e aggiornato dai danni, zoom e telecamera, quattro profili e tre scale UI, oltre alle regressioni dei cittadini. Il test precedente della placca è stato adeguato alla sua rimozione. Passano anche **87 controlli delle risorse Windows** e **43 dell'APK**. Nessun fallimento. Le anteprime del pacchetto sono in `.runtime/gate-footer-packed-captures/`; Android è simulato sul computer, senza nuovo test su Pixel fisico.
 
 Setup Windows e APK **0.4.1.37 / Android 401037** generati: firma v2/v3 stabile, allineamento, versione e checksum verificati. Eseguibile dei collegamenti aggiornato; copia precedente in `.runtime/NienteZombie-prima-hud-cancello.exe`. Log nel rilascio `builds/releases/0.4.1.37/`.
+
+## Conteggi e insegne degli edifici — build 0.4.1.38
+
+Costruisci mostra per tipo quanti edifici sono già pronti e quanti ancora in costruzione. Nella città i nomi sotto gli edifici sono sostituiti da insegne illustrate cliccabili sopra i tetti; posti, lavoratori e stato dell'attività rimangono in targhette compatte. Le insegne evitano i pulsanti dell'HUD e coprono le luci decorative. Illustrazioni esistenti ritagliate e precaricate in texture dedicate con mipmap. Dettagli e anteprime: [INSEGNE_EDIFICI_0.4.1.38.md](INSEGNE_EDIFICI_0.4.1.38.md).
+
+Passano **184 controlli del sorgente e 184 del pacchetto Windows con OpenGL**, con conteggi per tipo, cantieri distinti, completamento e input effettivo sulle insegne. Passano inoltre **2.621 controlli di layout Android**, **354 dello scroll touch**, **87 delle risorse Windows** e **44 dell'APK**. La galleria del pacchetto comprende 15 acquisizioni di tutti gli otto tipi, stati dei negozi e catalogo su PC e smartphone 16:9/20:9. Nessun fallimento. I dati sono isolati; Android simulato sul computer, senza nuovo test su Pixel fisico.
+
+Rilascio **0.4.1.38 / Android 401038** completato con setup Windows e APK firmato. Firma v2/v3 stabile, allineamento, metadati e checksum verificati. Eseguibile dei collegamenti aggiornato con copia precedente. Log in `builds/releases/0.4.1.38/logs/`.
