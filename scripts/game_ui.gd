@@ -2,6 +2,8 @@ extends CanvasLayer
 
 const CozyPanel = preload("res://scripts/cozy_panel.gd")
 const CozyRules = preload("res://scripts/cozy_rules.gd")
+const Chrome = preload("res://scripts/ui_chrome.gd")
+const MobileHUD = preload("res://scripts/mobile_hud.gd")
 const Typography = preload("res://scripts/typography.gd")
 const ActorVisuals = preload("res://scripts/actor_visuals.gd")
 const HUDIcons = preload("res://scripts/hud_icons.gd")
@@ -27,21 +29,21 @@ signal camera_pan(direction: int)
 signal game_started
 signal main_menu_opened
 
-const INK = Color("453b2e")
-const PANEL = Color("f5edda")
-const CARD = Color("fff8e8")
-const BORDER = Color("d7c5a2")
-const TEXT = Color("493d2d")
-const MUTED = Color("796a50")
-const GOLD = Color("9c682b")
-const SAGE = Color("526f55")
+const INK = Color("263f36")
+const PANEL = Color("f8f4e9")
+const CARD = Color("fffdf4")
+const BORDER = Color("d9d8c6")
+const TEXT = Color("30483c")
+const MUTED = Color("72816e")
+const GOLD = Color("a46d33")
+const SAGE = Color("4b7c60")
 const RED = Color("ad4f3d")
-const CREAM = Color("fff1d4")
-const CREAM_EDGE = Color("c4a573")
-const HONEY = Color("efc46d")
-const WOOD = Color("4c3c30")
-const WOOD_EDGE = Color("a77b4b")
-const LIGHT = Color("fff1d6")
+const CREAM = Color("fff6e2")
+const CREAM_EDGE = Color("c8cfb7")
+const HONEY = Color("ecc66e")
+const WOOD = Color("294c40")
+const WOOD_EDGE = Color("849d75")
+const LIGHT = Color("fff6e5")
 const MODAL_APPEAR_DURATION = 0.26
 const WEAPON_COPY = {
 	"pistol":["Pistola di servizio","Un colpo contro i classici. Affidabile, con munizioni infinite.","Gittata medio-corta"],
@@ -322,17 +324,18 @@ func _button(value: String, callback: Callable, primary: bool = false, small: bo
 	b.add_theme_font_size_override("font_size", 16 if small else 18)
 	if DeviceLayout.mobile: b.add_theme_font_size_override("font_size",18)
 	if DeviceLayout.android_phone(): b.add_theme_font_size_override("font_size",20)
-	b.add_theme_color_override("font_color", INK)
-	b.add_theme_color_override("font_hover_color", INK)
-	b.add_theme_color_override("font_pressed_color", INK)
-	b.add_theme_color_override("font_hover_pressed_color", INK)
-	b.add_theme_color_override("font_focus_color", INK)
+	b.add_theme_color_override("font_color", CREAM if primary else INK)
+	b.add_theme_color_override("font_hover_color", CREAM if primary else INK)
+	b.add_theme_color_override("font_pressed_color", CREAM if primary else INK)
+	b.add_theme_color_override("font_hover_pressed_color", CREAM if primary else INK)
+	b.add_theme_color_override("font_focus_color", CREAM if primary else INK)
 	b.add_theme_color_override("font_disabled_color", Color("9c927e"))
-	b.add_theme_stylebox_override("normal", _raised(HONEY if primary else Color("e8ddbe"),Color("b88a3e") if primary else Color("b69b71"),14,false,padding))
-	b.add_theme_stylebox_override("hover", _raised(Color("ffe0a0") if primary else Color("f7ebce"),Color("a17b41"),14,false,padding))
-	b.add_theme_stylebox_override("pressed", _raised(Color("d7a951") if primary else Color("d4c3a0"),Color("a7823c"),14,true,padding))
+	b.add_theme_stylebox_override("normal", _raised(Chrome.FOREST if primary else Color("f4efdf"),Color("b6c2a4") if primary else Color("d2d3ba"),18,false,padding))
+	b.add_theme_stylebox_override("hover", _raised(Color("4c7557") if primary else Color("fff9e8"),Color("a9bb99"),18,false,padding))
+	b.add_theme_stylebox_override("pressed", _raised(Color("1e4438") if primary else Color("e9e3cc"),Color("879c74"),18,true,padding))
 	b.add_theme_stylebox_override("disabled", _style(Color("ded6c1"),Color("c4b698"),14,padding))
 	b.add_theme_stylebox_override("focus", _style(Color(0,0,0,0),GOLD,14,padding))
+	b.ready.connect(func() -> void: Chrome.decorate_button(b))
 	b.pressed.connect(func() -> void:
 		Game.sfx.emit("ui")
 		callback.call()
@@ -389,9 +392,9 @@ func _rule(parent: Node) -> void:
 func _cabinet_style(padding: int = 28) -> StyleBoxFlat:
 	if DeviceLayout.mobile: padding = 14
 	var s: StyleBoxFlat = _style(PANEL,WOOD,23,padding)
-	s.set_border_width_all(12)
-	s.border_width_bottom = 17
-	s.shadow_color = Color(0.08,0.06,0.03,.45)
+	s.set_border_width_all(4)
+	s.border_width_bottom = 7
+	s.shadow_color = Color(0.08,0.16,0.10,.25)
 	s.shadow_size = 22
 	s.shadow_offset = Vector2(0,9)
 	if DeviceLayout.android_phone():
@@ -472,7 +475,8 @@ func _fit_header_contents() -> void:
 		var text: VBoxContainer = row.get_child(1)
 		text.get_child(0).visible = not DeviceLayout.mobile and not compact
 		text.get_child(1).add_theme_font_size_override("font_size",16 if tight else 18 if compact else 22)
-	_defense_context.custom_minimum_size.x = 0
+	if DeviceLayout.android_phone(): MobileHUD.fit(self)
+	else: _defense_context.custom_minimum_size.x = 0
 	_defense_ammo.add_theme_font_size_override("font_size",14 if compact else 16)
 
 func _fit_modal_to_screen() -> void:
@@ -543,6 +547,9 @@ func _layout_menu() -> void:
 		_menu_margin.add_theme_constant_override("margin_right",ceili(root.size.x-safe.end.x)+28)
 
 func _build_phone_header() -> void:
+	if DeviceLayout.android_phone():
+		MobileHUD.header(self)
+		return
 	_header = PanelContainer.new()
 	_header.name = "PhoneHeader"
 	_header.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
@@ -563,7 +570,7 @@ func _build_phone_header() -> void:
 	population_label = _resource_pill(row,"population","ABITANTI",SAGE,88)
 	row.add_child(_spacer())
 	_build_weapon_header(row)
-	row.add_child(_icon_button("bill",_show_quests,"Diario del rifugio"))
+	row.add_child(_icon_button("journal",_show_quests,"Diario del rifugio"))
 	pause_button = _icon_button("pause",_show_pause,"Pausa e impostazioni")
 	row.add_child(pause_button)
 	objective_label = _label("")
@@ -598,7 +605,7 @@ func _build_header() -> void:
 	population_label = _resource_pill(row,"population","ABITANTI",SAGE,142)
 	row.add_child(_spacer())
 	_build_weapon_header(row)
-	row.add_child(_icon_button("bill",_show_quests,"Diario del rifugio · obiettivi e ricompense"))
+	row.add_child(_icon_button("journal",_show_quests,"Diario del rifugio · obiettivi e ricompense"))
 	pause_button = _icon_button("pause",_show_pause,"Pausa · Esc")
 	row.add_child(pause_button)
 	sound_button = _icon_button("sound",_toggle_sound,"Attiva / disattiva audio")
@@ -620,9 +627,11 @@ func _resource_pill(parent: Node, kind: String, caption: String, tint: Color, wi
 	p.custom_minimum_size = Vector2(width,52)
 	p.set_meta("hud_card",kind)
 	p.tooltip_text = "Persone accolte / posti disponibili nelle case" if kind=="population" else "Giorni trascorsi nel rifugio" if kind=="sun" else caption.capitalize()
-	var pill_style: StyleBoxFlat = _style(CREAM,CREAM_EDGE,13,9)
-	pill_style.border_width_bottom = 3
-	pill_style.shadow_color = Color("132123")
+	p.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var pill_style: StyleBoxFlat = _style(CREAM,CREAM_EDGE,18,9)
+	pill_style.set_border_width_all(1)
+	pill_style.border_width_bottom = 2
+	pill_style.shadow_color = Color(0.08,0.18,0.12,0.12)
 	pill_style.shadow_size = 1
 	pill_style.shadow_offset = Vector2(0,3)
 	p.add_theme_stylebox_override("panel",pill_style)
@@ -650,6 +659,9 @@ func _resource_pill(parent: Node, kind: String, caption: String, tint: Color, wi
 	return amount
 
 func _build_footer() -> void:
+	if DeviceLayout.android_phone():
+		MobileHUD.footer(self)
+		return
 	var p: PanelContainer = PanelContainer.new()
 	_footer = p
 	p.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
@@ -815,6 +827,9 @@ func set_world_context(defense: bool) -> void:
 
 func _update_context_visibility() -> void:
 	if not is_instance_valid(_context_root): return
+	if DeviceLayout.android_phone():
+		_context_root.hide()
+		return
 	_context_root.visible = hud.visible and not main_menu_active and not is_instance_valid(modal) and not (Game.tutorial_active() and not _tutorial_minimized)
 	_defense_context.visible = true
 	_town_context.visible = not _defense_view
@@ -829,7 +844,7 @@ func _update_defense_status() -> void:
 	var cooling: bool = Game.shot_cooldown>0.01
 	_defense_status.text = ("Ricarica %.1f s" % Game.shot_cooldown).replace(".",",") if cooling else "Pronto"
 	if Game.weapon!="pistol" and Game.ammo<=0: _defense_status.text = "Senza colpi"
-	var color: Color = GOLD if cooling else RED if Game.weapon!="pistol" and Game.ammo<=0 else SAGE
+	var color: Color = HONEY if DeviceLayout.android_phone() else GOLD if cooling else RED if Game.weapon!="pistol" and Game.ammo<=0 else SAGE
 	if _defense_status.get_theme_color("font_color")!=color:
 		_defense_status.add_theme_color_override("font_color",color)
 	_defense_ready.value = clampf((1.0-Game.shot_cooldown/maxf(float(definition.cooldown),0.01))*100.0,0,100)
@@ -862,6 +877,7 @@ func _update_town_status() -> void:
 	var exp_status: String = str(Game.expedition.get("status","idle"))
 	_expedition_status_button.visible = exp_status!="idle"
 	_expedition_status_button.get_meta("caption").text = "Squadra rientrata" if exp_status=="ready" else "Rientro "+_time(float(Game.expedition.get("remaining",0)))
+	if DeviceLayout.android_phone(): MobileHUD.badges(self,ready_count,exp_status)
 
 func _open_shop_attention(ready: bool) -> void:
 	_update_town_status()
@@ -1122,9 +1138,9 @@ func _update_hud() -> void:
 	population_label.text = "%d / %d" % [Game.citizens.size(),Game.capacity()]
 	var ratio: float = Game.gate_hp / maxf(Game.gate_max,1.0)
 	gate_bar.value = ratio*100
-	gate_label.text = ("CANCELLO %d%%" if DeviceLayout.mobile else "AL CANCELLO  %d%%") % int(ratio*100)
+	gate_label.text = ("%d%%" if DeviceLayout.android_phone() else "CANCELLO %d%%" if DeviceLayout.mobile else "AL CANCELLO  %d%%") % int(ratio*100)
 	gate_label.add_theme_color_override("font_color",RED if ratio<.4 else TEXT)
-	gate_button.add_theme_stylebox_override("normal",_raised(Color("e8ddbe"),RED if not Game.threats.is_empty() else BORDER,15,false,12))
+	gate_button.add_theme_stylebox_override("normal",_raised(Color("f4efdf"),RED if not Game.threats.is_empty() else BORDER,22,false,12))
 	_update_zombie_alert()
 	_update_tutorial()
 	objective_label.text = _next_objective()
@@ -1236,6 +1252,9 @@ func _navigate(key: String) -> void:
 
 func set_selected_tab(key: String) -> void:
 	selected_tab = key
+	if DeviceLayout.android_phone():
+		Chrome.select_nav(self,key)
+		return
 	for k in nav_buttons:
 		var b: Button = nav_buttons[k]
 		b.add_theme_stylebox_override("normal",_raised(HONEY if k==key else Color("e8ddbe"),Color("ac853f") if k==key else Color("b69b71"),15))
@@ -1328,11 +1347,11 @@ func _open(kind: String, title: String, subtitle: String = "DOSSIER DEL RIFUGIO"
 	var stack: VBoxContainer = _vbox(10 if DeviceLayout.mobile else 18)
 	box.add_child(stack)
 	var ribbon: PanelContainer = PanelContainer.new()
-	ribbon.add_theme_stylebox_override("panel",_raised(Color("61774e"),Color("435537"),14,false,8 if DeviceLayout.mobile else 17))
+	ribbon.add_theme_stylebox_override("panel",_raised(Chrome.FOREST,Color("577b53"),14,false,8 if DeviceLayout.mobile else 17))
 	stack.add_child(ribbon)
 	var header: HBoxContainer = _hbox(15)
 	ribbon.add_child(header)
-	var kind_icons: Dictionary = {"visitor":"person","building":"home","building_help":"help","citizens":"people","citizen_equipment":"gun","assignment":"people","job_select":"build","build":"build","expeditions":"compass","armory":"gun","weapon_details":"gun","gate":"shield","demolition":"build","quests":"bill","help":"help","pause":"pause","settings":"sound","credits":"heart","reset":"home","tutorial_intro":"home"}
+	var kind_icons: Dictionary = {"visitor":"person","building":"home","building_help":"help","citizens":"people","citizen_equipment":"gun","assignment":"people","job_select":"build","build":"build","expeditions":"compass","armory":"gun","weapon_details":"gun","gate":"shield","demolition":"build","quests":"journal","help":"help","pause":"pause","settings":"sound","credits":"heart","reset":"home","tutorial_intro":"home"}
 	header.add_child(_icon(str(kind_icons.get(kind,"home")),38 if DeviceLayout.mobile else 58))
 	var titles: VBoxContainer = _vbox(2)
 	titles.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -1421,6 +1440,9 @@ func _citizen_name(parent: Node, citizen: Dictionary, font_size: int=24) -> void
 func _finish_phone_page(instance_id: int) -> void:
 	if not is_instance_valid(_modal_box) or _modal_box.get_instance_id()!=instance_id: return
 	PhonePages.polish(self)
+	if _modal_box.get_meta("reveal_content",false):
+		_modal_box.set_meta("reveal_content",false)
+		Chrome.reveal(modal_content)
 
 func _update_modal_motion_pivot(instance_id: int) -> void:
 	if not is_instance_id_valid(instance_id): return
@@ -1451,7 +1473,12 @@ func _stop_modal_motion() -> void:
 	_modal_motion_tween = null
 
 func _begin_modal_motion(replay: bool) -> void:
+	if Preferences.reduced_motion:
+		_stop_modal_motion()
+		_modal_motion_progress = 1.0
+		return
 	if replay:
+		_modal_box.set_meta("reveal_content",true)
 		_stop_modal_motion()
 		_modal_motion_progress = 0.0
 	else:
@@ -1493,8 +1520,7 @@ func _close_modal() -> void:
 		Game.paused = _pause_before_modal
 		_pause_owner = false
 	if is_instance_valid(modal):
-		modal.hide()
-		modal.queue_free()
+		Chrome.retire(modal)
 	modal = null
 	modal_content = null
 	modal_scroll = null
@@ -1521,13 +1547,16 @@ func _close_modal() -> void:
 func _card(parent: Node, tint: Color = BORDER) -> VBoxContainer:
 	var p: PanelContainer = PanelContainer.new()
 	p.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var card_style: StyleBoxFlat = _style(CARD,BORDER if tint==BORDER else tint,16,14 if DeviceLayout.android_phone() else 14 if DeviceLayout.mobile else 18)
+	var card_style: StyleBoxFlat = _style(CARD,BORDER,22,18)
 	card_style.border_width_left = 1
 	card_style.border_width_right = 1
 	card_style.border_width_top = 1
-	card_style.border_width_bottom = 2
-	card_style.shadow_color = Color(0.21,0.16,0.08,.08)
-	card_style.shadow_size = 3
+	card_style.border_width_bottom = 1
+	if tint!=BORDER:
+		card_style.border_width_left = 4
+		card_style.border_color = tint
+	card_style.shadow_color = Color(0.12,0.22,0.15,.07)
+	card_style.shadow_size = 7
 	card_style.shadow_offset = Vector2(0,2)
 	p.add_theme_stylebox_override("panel",card_style)
 	parent.add_child(p)
@@ -1916,7 +1945,7 @@ func show_main_menu() -> void:
 	menu_layer.add_child(background)
 	var shade: ColorRect = ColorRect.new()
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	shade.color = Color(.10,.20,.19,.40)
+	shade.color = Color(.08,.24,.16,.24)
 	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	menu_layer.add_child(shade)
 	if DeviceLayout.android_phone():
@@ -2084,6 +2113,7 @@ func _show_settings() -> void:
 	display.add_child(sizes)
 	display.add_child(_copy("Regola la grandezza di testi, finestre e pulsanti.",14))
 	_settings_toggle(display,"Scuotimento della visuale","screen_shake",Preferences.screen_shake)
+	_settings_toggle(display,"Riduci le animazioni","reduced_motion",Preferences.reduced_motion)
 	if DeviceLayout.mobile:
 		display.add_child(_copy("Schermo intero automatico · interfaccia adattata al dispositivo",17,SAGE))
 	else:
@@ -2305,3 +2335,13 @@ func _cozy_action(action: String, id: int=-1) -> void:
 		"repair_parts": Game.repair_with_materials()
 	if panel_kind=="visitor": show_visitor(id)
 	else: _refresh_current()
+
+func world_input_blocked(point: Vector2) -> bool:
+	if main_menu_active or is_instance_valid(modal): return true
+	for control: Node in root.find_children("*","Control",true,false):
+		if not control.is_visible_in_tree(): continue
+		if control.mouse_filter==Control.MOUSE_FILTER_IGNORE: continue
+		if not control is BaseButton and not control.has_meta("hud_card"): continue
+		var local: Vector2 = control.get_global_transform_with_canvas().affine_inverse()*point
+		if Rect2(Vector2.ZERO,control.size).has_point(local): return true
+	return false

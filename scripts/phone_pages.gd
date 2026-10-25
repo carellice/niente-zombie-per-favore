@@ -2,7 +2,7 @@ extends RefCounted
 ## Landscape phone pages: one scroll surface, a narrow control rail and real gutters.
 
 const TITLES = {"armory":"Armeria","weapon_details":"Caratteristiche arma","visitor":"Una porta aperta","citizens":"Cittadini","citizen_equipment":"Equipaggiamento","assignment":"Lavoratori","job_select":"Assegna un lavoro","build":"Costruisci","expeditions":"Spedizioni","demolition":"Demolizione","gate":"Difese del cancello","quests":"Diario del rifugio","help":"Come si gioca","pause":"Pausa","settings":"Impostazioni","credits":"Crediti","reset":"Nuova partita","tutorial_intro":"Benvenuto al rifugio"}
-const ICONS = {"armory":"gun","weapon_details":"gun","visitor":"person","citizens":"people","citizen_equipment":"gun","assignment":"people","job_select":"people","build":"build","expeditions":"compass","demolition":"build","gate":"shield","quests":"bill","help":"help","pause":"pause","settings":"sound","credits":"heart"}
+const ICONS = {"armory":"gun","weapon_details":"gun","visitor":"person","citizens":"people","citizen_equipment":"gun","assignment":"people","job_select":"people","build":"build","expeditions":"compass","demolition":"build","gate":"shield","quests":"journal","help":"help","pause":"pause","settings":"sound","credits":"heart"}
 
 static func open_page(ui: CanvasLayer, kind: String, title: String, id: int, saved_scroll: int, continuing: bool) -> VBoxContainer:
 	ui.modal = Control.new()
@@ -19,6 +19,8 @@ static func open_page(ui: CanvasLayer, kind: String, title: String, id: int, sav
 	box.add_theme_stylebox_override("panel",ui._cabinet_style())
 	ui.modal.add_child(box)
 	ui._modal_box = box
+	var decoration: Control = ui.Chrome.PageDecoration.new()
+	box.add_child(decoration)
 	var safe: MarginContainer = MarginContainer.new()
 	safe.name = "PhoneSafeContents"
 	box.add_child(safe)
@@ -38,7 +40,7 @@ static func open_page(ui: CanvasLayer, kind: String, title: String, id: int, sav
 	else:
 		close = ui._icon_button("cross",ui._dismiss_phone_page,"Riprendi la partita" if kind=="pause" else "Chiudi")
 	close.name = "PhoneClose"
-	close.add_theme_stylebox_override("normal",ui._style(Color("e9dabc"),Color("d3b98a"),18,8))
+	close.add_theme_stylebox_override("normal",ui._raised(Color("fff6e2"),Color("b6c6a5"),22,false,8))
 	rail.add_child(close)
 	if kind=="building": rail.add_child(ui._icon_button("help",ui._show_building_help.bind(id),"A cosa serve questo edificio?"))
 	var space: Control = Control.new()
@@ -48,7 +50,7 @@ static func open_page(ui: CanvasLayer, kind: String, title: String, id: int, sav
 	var section: Control = ui._icon(str(ICONS.get(kind,"home")),40,ui.SAGE)
 	section.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	rail.add_child(section)
-	var calm: Label = ui._label("ZOMBIE\nIN PAUSA",13,ui.SAGE,true)
+	var calm: Label = ui._label("CON\nCALMA",13,ui.CREAM,true)
 	calm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	rail.add_child(calm)
 	var page_column: VBoxContainer = ui._vbox(8)
@@ -72,10 +74,15 @@ static func open_page(ui: CanvasLayer, kind: String, title: String, id: int, sav
 	page.name = "PhonePageBody"
 	inset.add_child(page)
 	ui._phone_page = page
-	var heading: Label = ui._copy(str(TITLES.get(kind,title)),29,ui.TEXT)
+	var masthead: VBoxContainer = ui._vbox(2)
+	page.add_child(masthead)
+	var eyebrow: Label = ui._label("IL TUO RIFUGIO  /  "+str(TITLES.get(kind,title)).to_upper(),14,ui.GOLD,true)
+	eyebrow.set_meta("eyebrow",true)
+	masthead.add_child(eyebrow)
+	var heading: Label = ui._copy(str(TITLES.get(kind,title)),32,ui.TEXT)
 	heading.name = "PhonePageTitle"
 	heading.add_theme_font_override("font",ui.heading)
-	page.add_child(heading)
+	masthead.add_child(heading)
 	ui._add_purchase_balances(page,kind)
 
 	ui.modal_navigation = ui._hbox(16)
@@ -115,7 +122,7 @@ static func polish(ui: CanvasLayer) -> void:
 	if not is_instance_valid(ui._phone_page): return
 	# Text must wrap before a minimum width can push the page past its right gutter.
 	for label: Node in ui._phone_page.find_children("*","Label",true,false):
-		label.add_theme_font_size_override("font_size",maxi(20,label.get_theme_font_size("font_size")))
+		label.add_theme_font_size_override("font_size",maxi(15 if label.has_meta("eyebrow") else 20,label.get_theme_font_size("font_size")))
 		if label.text.length()>24:
 			label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -208,6 +215,8 @@ static func main_menu(ui: CanvasLayer) -> void:
 		grid.add_child(button)
 	ui._layout_menu()
 	ui._apply_mobile_controls.call_deferred()
+	ui.Chrome.reveal(choices)
+	ui.Chrome.reveal(hero)
 	ui.panel_changed.emit(true)
 	ui.main_menu_opened.emit()
 	play.grab_focus()

@@ -9,6 +9,7 @@ var effects_volume: float = 0.8
 var music_volume: float = 0.2
 var sound_enabled: bool = true
 var screen_shake: bool = true
+var reduced_motion: bool = false
 var fullscreen: bool = false
 var interface_size: String = "compact"
 
@@ -20,7 +21,7 @@ func snapshot() -> Dictionary:
 		"master_volume":master_volume, "effects_volume":effects_volume,
 		"music_volume":music_volume, "sound_enabled":sound_enabled,
 		"screen_shake":screen_shake, "fullscreen":fullscreen,
-		"interface_size":interface_size
+		"interface_size":interface_size, "reduced_motion":reduced_motion
 	}
 
 func apply_settings(values: Dictionary, persist: bool = true) -> void:
@@ -29,6 +30,7 @@ func apply_settings(values: Dictionary, persist: bool = true) -> void:
 	music_volume = clampf(float(values.get("music_volume",music_volume)),0.0,1.0)
 	sound_enabled = bool(values.get("sound_enabled",sound_enabled))
 	screen_shake = bool(values.get("screen_shake",screen_shake))
+	reduced_motion = bool(values.get("reduced_motion",reduced_motion))
 	fullscreen = bool(values.get("fullscreen",fullscreen))
 	var requested_size: String = str(values.get("interface_size",interface_size))
 	interface_size = requested_size if requested_size in ["compact","medium","large"] else "compact"

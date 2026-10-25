@@ -39,8 +39,12 @@ func run() -> void:
 	var boot: Image = Image.new()
 	expect(boot.load_png_from_buffer(apk.read_file("assets/assets/android/icon_foreground.png"))==OK,"Native boot splash PNG shipped unmodified")
 	expect(apk.file_exists("assets/loading.tscn.remap") and apk.file_exists("assets/scripts/loading_screen.gdc"),"Real loading scene and script shipped")
-	for script: String in ["armory_panel","build_panel","expedition_panel","phone_pages","citizen_roaming","construction_panel","construction_visual","expedition_gear","citizen_equipment_panel","building_signage","demolition_panel","cozy_rules","cozy_panel"]:
+	for script: String in ["armory_panel","build_panel","expedition_panel","phone_pages","citizen_roaming","construction_panel","construction_visual","expedition_gear","citizen_equipment_panel","building_signage","demolition_panel","cozy_rules","cozy_panel","world_touch","mobile_hud","ui_chrome"]:
 		expect(apk.file_exists("assets/scripts/"+script+".gdc"),"New UI controller shipped: "+script)
+	var journal_import: ConfigFile = ConfigFile.new()
+	var journal_loaded: bool = journal_import.parse(apk.read_file("assets/assets/art/journal.png.import").get_string_from_utf8())==OK
+	var journal_texture: String = str(journal_import.get_value("remap","path",""))
+	expect(journal_loaded and not journal_texture.is_empty() and apk.file_exists("assets/"+journal_texture.trim_prefix("res://")),"Painted journal icon is shipped")
 	var cherry_import: ConfigFile = ConfigFile.new()
 	var radio_import: ConfigFile = ConfigFile.new()
 	var radio_loaded: bool = radio_import.parse(apk.read_file("assets/assets/art/community-radio.png.import").get_string_from_utf8())==OK

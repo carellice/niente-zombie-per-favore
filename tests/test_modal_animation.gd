@@ -85,7 +85,7 @@ func run() -> void:
 	var scroll_before: int = ui.modal_scroll.scroll_vertical
 	var coins_before: float = float(game.coins)
 	var ammo_before: int = int(game.ammo)
-	var purchase: Button = button_prefix(ui.modal,"Prepara 30 munizioni")
+	var purchase: Button = button_prefix(ui.modal,"+30 colpi")
 	expect(purchase!=null and not purchase.disabled,"Armory exposes an enabled real ammunition action")
 	if purchase!=null: purchase.pressed.emit()
 	expect(game.ammo==ammo_before+30 and is_equal_approx(float(game.coins),coins_before-40.0),"Purchase commits immediately, without waiting for a visual animation")
@@ -145,7 +145,20 @@ func run() -> void:
 	var viewport_center: Vector2 = ui.root.size*0.5
 	expect(visual_center.distance_to(viewport_center)<1.0,"Cabinet finishes centered after a resize during its entrance")
 	expect(ui._modal_box.offset_top+ui._modal_box.offset_bottom==0.0,"Animation leaves no persistent slide offset")
+	var retiring: Control = ui.modal
 	ui._close_modal()
+	expect(ui.modal==null and retiring.mouse_filter==Control.MOUSE_FILTER_IGNORE,"A fading departure releases input immediately")
+	await create_timer(0.2).timeout
+	expect(not is_instance_valid(retiring),"Departing dialog is freed after its short fade")
+	preferences.apply_settings({"reduced_motion":true},false)
+	ui._show_armory()
+	expect(is_equal_approx(ui._modal_motion_progress,1) and ui._modal_motion_tween==null,"Reduced motion opens immediately without a tween")
+	ui._close_modal()
+	preferences.save_settings()
+	preferences.reduced_motion = false
+	preferences.load_settings()
+	expect(preferences.reduced_motion,"Reduced motion preference persists")
+	preferences.apply_settings({"reduced_motion":false},false)
 	await settle()
 	ui.queue_free()
 	await settle()

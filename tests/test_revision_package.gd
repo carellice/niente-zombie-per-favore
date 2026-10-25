@@ -65,5 +65,9 @@ func _initialize() -> void:
 	expect(catalog.ZONES.size()==9, "Nine expedition destinations shipped")
 	expect(catalog.make_quests().size()==32, "Thirty-two diary goals shipped")
 	expect(ResourceLoader.exists("res://scripts/cozy_rules.gd") and ResourceLoader.exists("res://scripts/cozy_panel.gd"),"Cozy gameplay and redesigned panels shipped")
+	var journal: Texture2D = load("res://scripts/hud_icons.gd").texture("journal")
+	expect(journal!=null and journal.get_width()>200 and journal.get_image().has_mipmaps(),"Painted journal icon has isolated mipmaps")
+	for module: String in ["world_touch","mobile_hud","ui_chrome"]:
+		expect(ResourceLoader.exists("res://scripts/"+module+".gd"),"Mobile presentation module shipped: "+module)
 	print("REVISION PACKAGE: %d checks, %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)

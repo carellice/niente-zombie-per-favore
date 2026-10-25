@@ -32,6 +32,19 @@ func opened() -> void:
 		expect(padding.get_theme_constant("margin_right")>=20 and padding.get_theme_constant("margin_left")>=20,"Both content gutters")
 	for button: Node in ui.modal.find_children("*","Button",true,false):
 		if layout.mobile: expect(button.size.y>=layout.TOUCH_TARGET-1,"Comfortable tap target: "+str(button.name))
+func check_hud() -> void:
+	if not layout.android_phone(): return
+	var safe: Rect2 = layout.safe_rect().grow(2)
+	var inverse: Transform2D = ui.root.get_global_transform_with_canvas().affine_inverse()
+	var bounds: Array[Rect2] = []
+	for node: Node in ui.hud.find_children("*","Control",true,false):
+		if not node.is_visible_in_tree() or (not node is Button and not node.has_meta("hud_card")): continue
+		var transform: Transform2D = inverse*node.get_global_transform_with_canvas()
+		var rect: Rect2 = Rect2(transform*Vector2.ZERO,node.size)
+		expect(safe.encloses(rect),"HUD control stays inside safe area: "+str(node.name))
+		for previous: Rect2 in bounds: expect(not rect.grow(-1).intersects(previous.grow(-1)),"HUD controls have separate hit rectangles")
+		bounds.append(rect)
+
 func tap(node_name: String) -> void:
 	var button: Button = ui.modal.find_child(node_name,true,false)
 	expect(is_instance_valid(button),"Button exists: "+node_name)
@@ -60,6 +73,7 @@ func capture(name: String) -> void:
 	if folder.is_empty() or DisplayServer.get_name()=="headless": return
 	if is_instance_valid(ui.modal_scroll): ui.modal_scroll.scroll_vertical = 0
 	await settle()
+	await create_timer(0.4).timeout
 	await RenderingServer.frame_post_draw
 	expect(root.get_texture().get_image().save_png(folder.path_join("COZY-"+capture_prefix+"-"+name+".png"))==OK,"Capture "+name)
 func fresh() -> void:
@@ -102,7 +116,7 @@ func run() -> void:
 		layout.mobile = profile[2]
 		layout.preview_android_shortest_dp = profile[3]
 		layout.preview_insets = Vector4(24,6,40,8) if profile[2] else Vector4.ZERO
-		preferences.apply_settings({"interface_size":"compact","sound_enabled":false,"screen_shake":false,"fullscreen":false},false)
+		preferences.apply_settings({"interface_size":"compact","sound_enabled":false,"screen_shake":false,"reduced_motion":false,"fullscreen":false},false)
 		layout.refresh()
 		scene = load("res://main.tscn").instantiate()
 		if scene.get_script()==null:
@@ -119,6 +133,16 @@ func run() -> void:
 			layout.refresh()
 			fresh()
 			await settle()
+			check_hud()
+			if scale_name=="compact":
+				scene.focus_city()
+				scene._update_camera(3)
+				scene._process(0)
+				await capture("HUD-CITTA")
+				scene.focus_defense()
+				scene._update_camera(3)
+				scene._process(0)
+				await capture("HUD-DIFESA")
 			ui.show_building(game.buildings[3].id)
 			await opened()
 			expect(game.management_open,"Inspection protects combat")

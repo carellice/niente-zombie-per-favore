@@ -161,6 +161,12 @@ func run() -> void:
 			motion.position = point+Vector2(30,0)
 			motion.global_position = motion.position
 			motion.relative = Vector2(30,0)
+			if touch:
+				var raw_drag: InputEventScreenDrag = InputEventScreenDrag.new()
+				raw_drag.index = 0
+				raw_drag.position = motion.position
+				raw_drag.relative = motion.relative
+				root.push_input(raw_drag,true)
 			root.push_input(motion,true)
 			await frame(1)
 			await pointer(motion.position,false,touch)

@@ -1,6 +1,7 @@
 extends Control
 ## Presentation and input. All persistent gameplay lives in the Game autoload.
 
+const WorldTouch = preload("res://scripts/world_touch.gd")
 const UI = preload("res://scripts/game_ui.gd")
 const Typography = preload("res://scripts/typography.gd")
 const ActorVisuals = preload("res://scripts/actor_visuals.gd")
@@ -62,6 +63,7 @@ var character_ambience: Node
 var capture_path: String = ""
 var capture_clock: float = 0.0
 var touch_points: Dictionary = {}
+var world_touch = WorldTouch.new()
 var pinch_distance: float = 0.0
 var hit_flashes: Dictionary = {}
 var guard_flashes: Dictionary = {}
@@ -105,6 +107,7 @@ func _ready() -> void:
 	ui.panel_changed.connect(func(opened: bool):
 		panel_open = opened
 		if opened:
+			world_touch.cancel(self)
 			hover = ""
 			_cancel_building_hold(true)
 			dragging = false
@@ -158,6 +161,7 @@ func _ready() -> void:
 	_report_world_view()
 
 func _on_game_started() -> void:
+	world_touch.cancel(self,true)
 	_cancel_building_hold(true)
 	dragging = false
 	touch_points.clear()
@@ -245,6 +249,7 @@ func _sheet(path: String, columns: int, rows: int) -> Array[Texture2D]:
 
 func _process(delta: float) -> void:
 	elapsed += delta
+	world_touch.advance(self,delta)
 	_update_building_hold(delta)
 	if not Game.paused:
 		actor_clock += delta
@@ -412,6 +417,7 @@ func _clamp_zoom(value: float) -> float:
 	return clampf(value,_zoom_min(),_zoom_max())
 
 func _sync_device_layout() -> void:
+	world_touch.cancel(self)
 	_cancel_building_hold(true)
 	var phone: bool = DeviceLayout.android_phone()
 	var overview: float = _phone_overview_zoom() if phone else 0.0
@@ -456,6 +462,7 @@ func _report_world_view() -> void:
 	Game.set_visitor_spacing(54.0*DeviceLayout.actor_scale())
 
 func _cancel_camera_transition() -> void:
+	world_touch.cancel(self)
 	_cancel_building_hold(true)
 	if not camera_transition.is_empty():
 		camera_transition.clear()
@@ -499,6 +506,7 @@ func _expansion_rect() -> Rect2:
 	return Rect2(Vector2(_sx(_expansion_x()),_ground())+EXPANSION_RECT.position*_building_zoom(),EXPANSION_RECT.size*_building_zoom())
 
 func focus_gate() -> void:
+	world_touch.cancel(self)
 	_cancel_building_hold(true)
 	dragging = false
 	camera_transition.clear()
@@ -522,6 +530,7 @@ func focus_defense() -> void:
 	queue_redraw()
 
 func focus_city() -> void:
+	world_touch.cancel(self)
 	_cancel_building_hold(true)
 	dragging = false
 	camera_transition.clear()
@@ -543,6 +552,8 @@ func _pan_button(direction: int) -> void:
 	_limit_camera()
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventScreenTouch or event is InputEventScreenDrag: return
+	if DeviceLayout.mobile and (event is InputEventMouseButton or event is InputEventMouseMotion) and event.device==InputEvent.DEVICE_ID_EMULATION: return
 	if in_main_menu:
 		return
 	if event is InputEventKey and event.pressed:
@@ -572,24 +583,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		_cancel_camera_transition()
 		target_zoom = _clamp_zoom(target_zoom * event.factor)
 		_limit_camera()
-	if event is InputEventScreenTouch:
-		if event.pressed:
-			touch_points[event.index] = event.position
-		else:
-			touch_points.erase(event.index)
-		if touch_points.size() < 2:
-			pinch_distance = 0.0
-	if event is InputEventScreenDrag and touch_points.has(event.index):
-		touch_points[event.index] = event.position
-		if touch_points.size() >= 2:
-			dragging = false
-			smg_held = false
-			var points: Array = touch_points.values()
-			var distance: float = points[0].distance_to(points[1])
-			if pinch_distance > 0.0:
-				target_zoom = _clamp_zoom(target_zoom * distance / pinch_distance)
-			pinch_distance = distance
-			_limit_camera()
 	if event is InputEventMouseButton:
 		var pos: Vector2 = event.position
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP or event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
@@ -598,7 +591,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			target_zoom = _clamp_zoom(target_zoom+_scaled_zoom(0.08 if event.button_index==MOUSE_BUTTON_WHEEL_UP else -0.08))
 			target_camera = world_before - pos.x / target_zoom
 			_limit_camera()
-		if event.button_index == MOUSE_BUTTON_LEFT and pos.y > 119.0 and pos.y < size.y - 152.0:
+		if event.button_index == MOUSE_BUTTON_LEFT and (dragging or not ui.world_input_blocked(pos)):
 			if event.pressed:
 				_cancel_camera_transition()
 				_suppress_world_release = false
@@ -631,6 +624,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			_update_hover(event.position)
 
 func _input(event: InputEvent) -> void:
+	if event is InputEventScreenTouch or event is InputEventScreenDrag:
+		if world_touch.handle(self,event): get_viewport().set_input_as_handled()
+		return
+	if DeviceLayout.mobile and (event is InputEventMouseButton or event is InputEventMouseMotion) and event.device==InputEvent.DEVICE_ID_EMULATION: return
 	if event is InputEventMouseMotion or event is InputEventMouseButton:
 		held_pointer = event.position
 		_world_pointer_active = true
@@ -644,16 +641,7 @@ func _input(event: InputEvent) -> void:
 	elif event is InputEventMouseButton and event.button_index==MOUSE_BUTTON_LEFT and event.pressed:
 		_world_release_serial += 1
 		_cancel_building_hold(true)
-	if event is InputEventScreenTouch and not event.pressed:
-		smg_held = false
-		touch_points.erase(event.index)
-		if touch_points.size()<2: pinch_distance = 0.0
-		_cancel_building_hold(event.canceled)
-		if event.canceled: dragging = false
-	elif event is InputEventScreenTouch and event.pressed and not _building_hold.is_empty() and not touch_points.has(event.index):
-		_cancel_building_hold(true)
-		dragging = false
-	if (event is InputEventMouseMotion or event is InputEventScreenDrag) and not _building_hold.is_empty():
+	if event is InputEventMouseMotion and not _building_hold.is_empty():
 		if event.position.distance_to(_building_hold.origin)>BUILDING_HOLD_SLOP: _cancel_building_hold(true)
 
 func _finish_world_release(serial: int) -> void:
@@ -704,12 +692,14 @@ func _draw_building_hold() -> void:
 	draw_arc(rect.get_center(),rect.size.x*0.5+5.0,-PI*0.5,-PI*0.5+TAU*progress,36,GOLD,4.0,true)
 
 func _on_pointer_exited() -> void:
+	if not world_touch.claimed.is_empty(): return
 	_world_pointer_active = false
 	hover = ""
 	_cancel_building_hold(true)
 	dragging = false
 
 func _on_main_menu_opened() -> void:
+	world_touch.cancel(self)
 	in_main_menu = true
 	_on_pointer_exited()
 	touch_points.clear()
@@ -728,7 +718,7 @@ func _on_building_demolished(_id: int) -> void:
 
 func _update_building_feedback(delta: float) -> void:
 	var hovered_id: int = -1
-	var available: bool = _world_pointer_active and not in_main_menu and not panel_open and not (dragging and drag_distance>8.0)
+	var available: bool = _world_pointer_active and (not DeviceLayout.android_phone() or world_touch.primary>=0) and not in_main_menu and not panel_open and not (dragging and drag_distance>8.0)
 	var gui_control: Control = get_viewport().gui_get_hovered_control()
 	if available and (gui_control==null or gui_control==self) and Rect2(Vector2.ZERO,size).has_point(held_pointer):
 		# Re-evaluate after camera movement even when the mouse is stationary.
@@ -1365,6 +1355,7 @@ func _notification(what: int) -> void:
 		Game.save_game()
 		get_tree().quit()
 	elif what in [NOTIFICATION_APPLICATION_FOCUS_OUT,NOTIFICATION_APPLICATION_PAUSED]:
+		world_touch.cancel(self,true)
 		_cancel_building_hold(true)
 		smg_held = false
 		dragging = false

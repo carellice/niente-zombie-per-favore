@@ -14,6 +14,11 @@ static var _icons: Array[Texture2D] = []
 static var _crops: Dictionary = {}
 
 static func texture(kind: String) -> Texture2D:
+	if kind=="journal":
+		if not _crops.has("journal"):
+			var image: Image = _source_image("res://assets/art/journal.png")
+			_crops["journal"] = _filtered_texture(image.get_region(image.get_used_rect()))
+		return _crops["journal"]
 	if _icons.is_empty():
 		# Build once, then release the CPU sheet rather than retaining a second
 		# full-size atlas in memory or rebuilding textures during every draw.
