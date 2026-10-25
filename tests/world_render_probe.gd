@@ -24,10 +24,6 @@ func _draw_guards() -> void:
 	drawing_order.append("soldier")
 	super._draw_guards()
 
-func _draw_gate_status() -> void:
-	drawing_order.append("gate_status")
-	super._draw_gate_status()
-
 func _text(pos: Vector2, value: String, font_size: int, color: Color, font: Font, centered: bool=false) -> void:
 	rendered_labels.append(value)
 	super._text(pos,value,font_size,color,font,centered)

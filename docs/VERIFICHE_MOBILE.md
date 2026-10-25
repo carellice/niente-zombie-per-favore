@@ -219,3 +219,11 @@ Ogni cittadino acquista copie e munizioni personali. Il pompa favorisce gli spaz
 Sorgente e pacchetto Windows superano **563 controlli del modello** e **446 dell'interfaccia con OpenGL**. Il test interattivo copre quattro profili e tre scale UI, acquisti effettivi, rifornimento, partenza, stato di assenza e geometria dei pulsanti. Il modello copre tutte le nove zone, quattro armi, consumi atomici, ripresa offline e salvataggi precedenti. Passano inoltre **1.045 popolazione/spedizioni**, **751 simulazione prolungata**, **880 UX**, **2.621 layout Android**, **354 scroll touch**, **90 tutorial**, **63 interfaccia**, **200 costruzione** e **192 pulsanti difesa**. Nessun fallimento.
 
 Rilascio **0.4.1.36 / Android 401036** completato: setup Windows e APK firmato con certificato v2/v3 stabile, allineamento, metadati e checksum verificati. Sul pacchetto Windows passano anche **87 controlli delle risorse**; sull'APK **43**, compresi i nuovi moduli. Eseguibile dei collegamenti aggiornato con backup della precedente versione. Anteprime `GEAR-*.png` dal pacchetto e log nel rilascio. Android è simulato sul computer; nessun nuovo collaudo su Pixel fisico.
+
+## Stato del cancello solo nella barra inferiore — build 0.4.1.37
+
+Rimosse la scritta Ingresso rifugio e la barra di integrità sovrapposte alla scena. L'indicatore in basso a destra conserva percentuale, barra e accesso al cancello. Rimosso anche il codice di posizionamento della placca duplicata. Nessuna modifica a difese o salvataggi.
+
+Passano **1.696 controlli del sorgente e 1.696 del pacchetto Windows con OpenGL**: assenza della scritta nella scena, indicatore inferiore visibile e aggiornato dai danni, zoom e telecamera, quattro profili e tre scale UI, oltre alle regressioni dei cittadini. Il test precedente della placca è stato adeguato alla sua rimozione. Passano anche **87 controlli delle risorse Windows** e **43 dell'APK**. Nessun fallimento. Le anteprime del pacchetto sono in `.runtime/gate-footer-packed-captures/`; Android è simulato sul computer, senza nuovo test su Pixel fisico.
+
+Setup Windows e APK **0.4.1.37 / Android 401037** generati: firma v2/v3 stabile, allineamento, versione e checksum verificati. Eseguibile dei collegamenti aggiornato; copia precedente in `.runtime/NienteZombie-prima-hud-cancello.exe`. Log nel rilascio `builds/releases/0.4.1.37/`.

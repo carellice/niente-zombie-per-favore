@@ -1,5 +1,5 @@
 extends SceneTree
-## Regression for citizens rendered as zombies on reversal and moving gate status.
+## Citizens remain human; gate status belongs only to the bottom HUD.
 const Actors = preload("res://scripts/actor_visuals.gd")
 var checks: int = 0
 var failures: int = 0
@@ -131,34 +131,31 @@ func run() -> void:
 			scene.focus_gate()
 			scene.zoom = scene.target_zoom
 			scene.camera_x = scene.target_camera
-			scene._gate_status_layout = ""
 			await redraw()
-			var bounds: Rect2 = scene._gate_status_rect()
-			var gate_before: Rect2 = scene._gate_rect()
-			var initial_zoom: float = scene.zoom
-			var safe: Rect2 = layout.safe_rect()
-			var safe_pixels: Rect2 = Rect2(safe.position*layout.ui_scale(),safe.size*layout.ui_scale())
-			expect(safe_pixels.encloses(bounds),str(profile[0])+" "+scale_name+": gate status respects safe margins")
+			var bounds: Rect2 = scene.ui.gate_button.get_global_rect()
+			expect(scene.ui.gate_button.is_visible_in_tree() and scene.ui.gate_label.text.contains("100%"),str(profile[0])+" "+scale_name+": bottom HUD retains the gate indicator")
 			if scale_name=="compact": await capture(str(profile[0])+"-GATE-OVERVIEW")
 			for factor: float in [scene._zoom_max(),scene._zoom_min(),scene._zoom_min()*1.3]:
 				scene.zoom = factor
 				scene.target_zoom = factor
-				# Keep the actual tower in view, directly behind its fixed indicator.
+				# Keep the actual tower in view without an overlaid status plaque.
 				var tower_center: float = scene.CHECKPOINT_LEFT+scene.CHECKPOINT_HEIGHT/3.0*layout.gate_scale()
-				scene.camera_x = tower_center-bounds.get_center().x/factor
+				scene.camera_x = tower_center-scene.size.x*0.33/factor
 				await redraw()
-				expect(scene._gate_status_rect().is_equal_approx(bounds),str(profile[0])+" "+scale_name+": zoom and camera do not move gate status")
-				expect(scene.drawing_order.back()=="gate_status",str(profile[0])+": gate status is drawn after the tower, soldier and world")
-				expect(scene.rendered_labels.count("INGRESSO RIFUGIO")==1,str(profile[0])+": gate status is rendered exactly once")
-				expect(is_equal_approx(factor,initial_zoom) or not scene._gate_rect().is_equal_approx(gate_before),str(profile[0])+": changing zoom changes the world while its status stays fixed")
+				expect(scene.ui.gate_button.get_global_rect().is_equal_approx(bounds),str(profile[0])+" "+scale_name+": zoom and camera leave the bottom indicator fixed")
+				expect(not scene.rendered_labels.has("INGRESSO RIFUGIO"),str(profile[0])+": no duplicate gate label is drawn in the world")
+				expect(is_equal_approx(scene.ui.gate_bar.value,100.0),str(profile[0])+": bottom bar shows full integrity")
 				if scale_name=="compact" and is_equal_approx(factor,scene._zoom_max()): await capture(str(profile[0])+"-GATE-ZOOM")
 			game.gate_hp = 80.0
+			scene.ui._update_hud()
 			await redraw()
-			expect(scene._gate_status_rect().is_equal_approx(bounds),str(profile[0])+": damage updates the bar without moving it")
+			expect(absf(scene.ui.gate_bar.value-80.0/game.gate_max*100.0)<=1.0 and scene.ui.gate_button.get_global_rect().is_equal_approx(bounds),str(profile[0])+": damage updates the remaining bottom bar without moving it")
 			game.gate_hp = game.gate_max
+			scene.ui._update_hud()
 	game._is_loading = false
 	if is_instance_valid(scene): scene.queue_free()
 	await settle()
+	await create_timer(1.6).timeout
 	print("CITIZEN RENDER GATE: %d checks, %d failures" % [checks,failures])
 	quit(0 if failures==0 else 1)
 

@@ -41,8 +41,6 @@ var elapsed: float = 0.0
 var actor_clock: float = 0.0
 var actor_gaits: Dictionary = {}
 var citizen_roaming: RefCounted = CitizenRoaming.new()
-var _gate_status_bounds: Rect2 = Rect2()
-var _gate_status_layout: String = ""
 var drag_start: Vector2
 var drag_camera: float = 0.0
 var dragging: bool = false
@@ -164,7 +162,6 @@ func _on_game_started() -> void:
 	_clear_target_outlines()
 	if Game.tutorial_stage == "intro":
 		citizen_roaming.reset()
-		_gate_status_layout = ""
 		character_ambience.reset()
 		camera_x = -420.0
 		target_camera = camera_x
@@ -761,8 +758,6 @@ func _draw() -> void:
 		var px: float = fposmod(i * 137.3 + elapsed * (3.0 + i % 4) - camera_x * 0.03, size.x)
 		var py: float = 220.0 + fposmod(i * 73.1 + sin(elapsed * 0.3 + i) * 11.0, maxf(ground - 260.0, 10.0))
 		draw_circle(Vector2(px, py), 1.0 if i % 3 else 1.6, Color(1.0,0.86,0.59,0.23))
-	# Screen-anchored status is drawn after every piece of world artwork.
-	_draw_gate_status()
 
 func _draw_road() -> void:
 	if road == null:
@@ -833,38 +828,6 @@ func _draw_gate() -> void:
 	if not Game.threats.is_empty():
 		var alpha: float = 0.65 + sin(elapsed * 5.0) * 0.25
 		draw_circle(Vector2(rect.position.x+rect.size.x*0.20,rect.position.y+rect.size.y*0.22),6.0*zoom,Color(0.95,0.36,0.27,alpha))
-
-func _gate_status_rect() -> Rect2:
-	var ui_scale: float = DeviceLayout.ui_scale()
-	var safe: Rect2 = DeviceLayout.safe_rect()
-	var safe_pixels: Rect2 = Rect2(safe.position*ui_scale,safe.size*ui_scale)
-	var layout_key: String = str(size)+str(safe)+str(ui_scale)+str(DeviceLayout.android_phone())
-	if _gate_status_layout!=layout_key:
-		var text_scale: float = _world_text_scale()
-		var width: float = 222.0*text_scale
-		var gate: Rect2 = _gate_rect()
-		var side_margin: float = 96.0*ui_scale if DeviceLayout.mobile else 110.0
-		var center: float = clampf(gate.get_center().x,safe_pixels.position.x+width*0.5+side_margin,safe_pixels.end.x-width*0.5-side_margin)
-		var header: float = DeviceLayout.PHONE_HEADER_HEIGHT if DeviceLayout.mobile else 116.0
-		var footer: float = DeviceLayout.PHONE_FOOTER_HEIGHT if DeviceLayout.mobile else 148.0
-		var top: float = (safe.position.y+header+12.0)*ui_scale
-		var bottom: float = safe_pixels.end.y-(footer+12.0)*ui_scale-46.0*text_scale
-		var y: float = clampf(gate.position.y-(108.0 if DeviceLayout.android_phone() else 44.0),top,maxf(top,bottom))
-		_gate_status_bounds = Rect2(center-width*0.5,y,width,46.0*text_scale)
-		_gate_status_layout = layout_key
-	return _gate_status_bounds
-
-func _draw_gate_status() -> void:
-	if in_main_menu: return
-	var bounds: Rect2 = _gate_status_rect()
-	var text_scale: float = _world_text_scale()
-	var gate_ratio: float = clampf(Game.gate_hp/maxf(Game.gate_max,1.0),0.0,1.0)
-	draw_set_transform(Vector2.ZERO)
-	_pill(Rect2(bounds.position,Vector2(bounds.size.x,37.0*text_scale)),INK)
-	_text(Vector2(bounds.get_center().x,bounds.position.y+25.0*text_scale),"INGRESSO RIFUGIO",17,CREAM,heading,true)
-	var bar: Rect2 = Rect2(bounds.position+Vector2(7.0,40.0)*text_scale,Vector2(bounds.size.x-14.0*text_scale,6.0*text_scale))
-	draw_rect(bar,Color("354440"))
-	draw_rect(Rect2(bar.position,Vector2(bar.size.x*gate_ratio,bar.size.y)),SAGE if gate_ratio>0.4 else Color("df8162"))
 
 func _guard_ids() -> Array[int]:
 	return [0]
