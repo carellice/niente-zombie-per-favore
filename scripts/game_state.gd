@@ -18,6 +18,7 @@ const SAVE_VERSION = 2
 const OFFLINE_CAP = 28800.0
 const GATE_X = 265.0
 const SurvivorCatalog = preload("res://scripts/survivor_catalog.gd")
+const Cozy = preload("res://scripts/cozy_rules.gd")
 const ContentCatalog = preload("res://scripts/content_catalog.gd")
 const ExpeditionGear = preload("res://scripts/expedition_gear.gd")
 const VISITOR_SPEED = 52.0
@@ -30,13 +31,13 @@ const THREAT_STATS = {
 }
 const DEPARTURE_EXIT_X = -1100.0
 const TUTORIAL_STAGES = ["intro", "first_zombie", "build_residence", "welcome_visitor", "build_cafe", "assign_worker", "restock", "stock", "complete"]
-const WAVE_INTERVAL_MIN = 55.0
-const WAVE_INTERVAL_MAX = 95.0
+const WAVE_INTERVAL_MIN = 90.0
+const WAVE_INTERVAL_MAX = 150.0
 const EXPEDITION_PARTIAL_REWARD = 0.4
-const EXPEDITION_SUCCESS_DAMAGE = 8
-const EXPEDITION_FAILURE_DAMAGE = 25
+const EXPEDITION_SUCCESS_DAMAGE = 4
+const EXPEDITION_FAILURE_DAMAGE = 14
 const EXPEDITION_HEALTH_FLOOR = 45
-const MAX_CONSTRUCTION_TIME = 21600.0
+const MAX_CONSTRUCTION_TIME = 1800.0
 const BUILDING_NAMES = ContentCatalog.BUILDING_NAMES
 const BUILDING_SKILLS = ContentCatalog.BUILDING_SKILLS
 const BUILDING_DESCRIPTIONS = ContentCatalog.BUILDING_DESCRIPTIONS
@@ -47,11 +48,13 @@ const LAST_NAMES = SurvivorCatalog.LAST_NAMES
 const QUIRKS = SurvivorCatalog.QUIRKS
 const WEAPONS = {
 	"pistol": {"name": "Pistola", "damage": 68.0, "cooldown": 0.29, "cost": 0, "supplies": 0, "range": 650.0},
-	"shotgun": {"name": "Fucile a pompa", "damage": 79.0, "cooldown": 0.85, "cost": 620, "supplies": 24, "range": 430.0},
-	"sniper": {"name": "Fucile di precisione", "damage": 175.0, "cooldown": 1.15, "cost": 1250, "supplies": 48, "range": 1800.0},
-	"smg": {"name": "Mitragliatore", "damage": 38.0, "cooldown": 0.12, "cost": 980, "supplies": 35, "range": 800.0}
+	"shotgun": {"name": "Fucile a pompa", "damage": 110.0, "cooldown": 0.85, "cost": 620, "supplies": 24, "range": 430.0},
+	"sniper": {"name": "Fucile di precisione", "damage": 230.0, "cooldown": 1.15, "cost": 1250, "supplies": 48, "range": 1800.0},
+	"smg": {"name": "Mitragliatore", "damage": 44.0, "cooldown": 0.12, "cost": 980, "supplies": 35, "range": 800.0}
 }
 
+var community: Dictionary = Cozy.fresh()
+var management_open: bool = false
 var coins: float = 1000.0
 var supplies: int = 65
 var gems: int = 12
@@ -128,6 +131,8 @@ func _notification(what: int) -> void:
 		save_game()
 
 func _new_game() -> void:
+	community = Cozy.fresh()
+	management_open = false
 	coins = 1000.0
 	supplies = 65
 	gems = 12
@@ -404,9 +409,10 @@ func advance(delta: float) -> void:
 	_tick_construction(delta)
 	_tick_products(delta)
 	_tick_expedition(delta)
-	_tick_threats(delta)
+	Cozy.tick(self,delta)
+	if not management_open: _tick_threats(delta)
 	_tick_visitors(delta)
-	_tick_waves(delta)
+	if not management_open: _tick_waves(delta)
 	_sync_tutorial()
 	_ui_timer += delta
 	_save_timer += delta
@@ -421,6 +427,7 @@ func advance(delta: float) -> void:
 
 func _tick_products(delta: float, offline: bool = false) -> float:
 	var earned: float = 0.0
+	var community_bonus: float = community_income_bonus()
 	for building in buildings:
 		if is_under_construction(building): continue
 		for product in building["products"]:
@@ -428,7 +435,9 @@ func _tick_products(delta: float, offline: bool = false) -> float:
 				product["remaining"] = maxf(0.0, float(product["remaining"]) - delta)
 				if product["remaining"] <= 0.0:
 					product["status"] = "ready"
-					if not offline:
+					if building.get("auto_shelves",false):
+						_fill_shelves(building,product)
+					if not offline and not building.get("auto_shelves",false):
 						toast.emit(building["name"] + ": merce pronta! Tocca per rifornire.")
 						sfx.emit("ready")
 			elif product["status"] == "stocked" and int(product["stock"]) > 0:
@@ -438,7 +447,7 @@ func _tick_products(delta: float, offline: bool = false) -> float:
 				if sold > 0:
 					product["stock"] = int(product["stock"]) - sold
 					product["sale_clock"] = fmod(float(product["sale_clock"]), interval)
-					var revenue = sold * float(product["price"])
+					var revenue = sold * float(product["price"]) * community_bonus
 					coins += revenue
 					earned += revenue
 					stats["earned"] = float(stats.get("earned", 0.0)) + revenue
@@ -470,7 +479,7 @@ func income_rate() -> float:
 		if is_under_construction(building): continue
 		for product in building["products"]:
 			if product["status"] == "stocked" and int(product["stock"]) > 0:
-				result += float(product["price"]) / float(product["sell_interval"])
+				result += float(product["price"]) / float(product["sell_interval"]) * community_income_bonus()
 	return result
 
 func next_build_cost(kind: String) -> int:
@@ -507,7 +516,7 @@ func next_build_duration(kind: String) -> float:
 		if kind=="cafe" and not _has_building(kind): return 10.0
 	# Pending lots count too: parallel starts never evade the progression curve.
 	var lots: float = float(construction_count())
-	return minf(MAX_CONSTRUCTION_TIME,ceilf(float(ContentCatalog.BUILDING_TIMES[kind])*(1.0+0.28*lots+0.04*lots*lots)))
+	return minf(MAX_CONSTRUCTION_TIME,ceilf(float(ContentCatalog.BUILDING_TIMES[kind])*(1.0+0.16*lots+0.01*lots*lots)))
 
 func construction_count() -> int:
 	return maxi(buildings.size(),int(stats.get("construction_started",0)))
@@ -542,6 +551,7 @@ func _resume_construction(now: float) -> int:
 	_construction_background_advanced = 0.0
 	_highest_timestamp = maxf(_highest_timestamp,now)
 	var finished: int = _tick_construction(missed,true)
+	Cozy.tick(self,missed,true)
 	_sync_tutorial()
 	_sync_quests()
 	changed.emit()
@@ -610,7 +620,7 @@ func demolition_preview(building_id: int) -> Dictionary:
 	if tutorial_active(): reason = "Completa o salta la guida iniziale prima di demolire."
 	elif beds>0 and remaining_beds<citizens.size(): reason = "Servono altri alloggi: resterebbero %d posti per %d abitanti, compresi quelli in spedizione." % [remaining_beds,citizens.size()]
 	return {"valid":true,"can_demolish":reason.is_empty(),"reason":reason,"name":str(building.name),"type":str(building.type),"pending":pending,
-		"workers":workers,"beds_lost":beds,"remaining_beds":remaining_beds,"stock":stock,"ready_batches":ready,"restocking":restocking}
+		"service_loss":str(building.get("service",{}).get("status","idle")),"workers":workers,"beds_lost":beds,"remaining_beds":remaining_beds,"stock":stock,"ready_batches":ready,"restocking":restocking}
 
 func demolish_building(building_id: int) -> bool:
 	var preview: Dictionary = demolition_preview(building_id)
@@ -678,20 +688,16 @@ func toggle_guard(citizen_id: int) -> bool:
 	# Kept for old integrations; the permanent tower soldier handles manual shots.
 	return false
 
-func restock(building_id: int, tier: int) -> bool:
+func restock(building_id: int, tier: int, quiet: bool=false) -> bool:
 	var building = get_building(building_id)
 	if building.is_empty() or is_under_construction(building) or tier < 1 or tier > building["products"].size():
 		return false
 	var product: Dictionary = building["products"][tier - 1]
 	if product["status"] == "ready":
-		product["status"] = "stocked"
-		product["stock"] = int(product["max_stock"])
-		product["sale_clock"] = 0.0
-		stats["restocked"] = int(stats.get("restocked", 0)) + 1
-		_increment_stat("stocked_" + str(building["type"]))
-		toast.emit("Scaffali pieni! " + product["name"] + " è in vendita.")
-		sfx.emit("cash")
-		_commit()
+		_fill_shelves(building,product)
+		if not quiet: toast.emit("Scaffali pieni! " + product["name"] + " è in vendita.")
+		if not quiet: sfx.emit("cash")
+		if not quiet: _commit()
 		return true
 	if product["status"] != "empty":
 		return false
@@ -713,9 +719,9 @@ func restock(building_id: int, tier: int) -> bool:
 			affinity += float(worker[skill])
 	product["status"] = "restocking"
 	product["remaining"] = float(product["duration"]) * maxf(0.45, 1.0 - affinity * 0.018)
-	toast.emit("Produzione avviata: " + product["name"] + ".")
-	sfx.emit("click")
-	_commit()
+	if not quiet: toast.emit("Produzione avviata: " + product["name"] + ".")
+	if not quiet: sfx.emit("click")
+	if not quiet: _commit()
 	return true
 
 func speed_up(building_id: int, tier: int) -> bool:
@@ -799,6 +805,9 @@ func accept_visitor(visitor_id: int) -> bool:
 		var visitor = visitors[i]
 		if int(visitor["id"]) != visitor_id:
 			continue
+		if visitor.get("observation","")=="waiting" or (visitor.get("observation","")=="done" and visitor.suspicious):
+			toast.emit("Attendi l’osservazione o accompagna la persona verso l’uscita.")
+			return false
 		if citizens.size() >= capacity():
 			toast.emit("Non ci sono letti liberi. Costruisci una residenza.")
 			return false
@@ -866,8 +875,8 @@ func _tick_threats(delta: float) -> void:
 func _breach() -> void:
 	stats["breaches"] = int(stats.get("breaches", 0)) + 1
 	if not tutorial_active():
-		coins = maxf(0.0, coins * 0.82)
-		supplies = maxi(0, supplies - 8)
+		coins = maxf(0.0, coins - minf(50.0,coins*0.03))
+		supplies = maxi(0, supplies - mini(2,supplies))
 	gate_hp = gate_max * 0.60
 	threats.clear()
 	_spawn_queue.clear()
@@ -875,7 +884,7 @@ func _breach() -> void:
 	_reset_wave_rest()
 	for citizen in citizens:
 		citizen["happiness"] = maxi(25, int(citizen["happiness"]) - 12)
-	toast.emit("Il cancello è stato ripristinato. Tocca lo zombie per fermarlo: puoi riprovare." if tutorial_active() else "Breccia! Tutti al sicuro, ma hai perso il 18% delle monete. Il cancello è stato ricostruito.")
+	toast.emit("Il cancello è stato ripristinato. Tocca lo zombie per fermarlo: puoi riprovare." if tutorial_active() else "Tutti al sicuro. Il cancello è ripristinato: al massimo 50 monete e 2 provviste usate per le riparazioni.")
 	sfx.emit("breach")
 	_commit()
 
@@ -931,7 +940,7 @@ func shoot(threat_id: int) -> bool:
 		var center = float(target["x"])
 		for threat in threats.duplicate():
 			if absf(float(threat["x"]) - center) < 145.0:
-				_damage_threat(threat, damage if int(threat["id"]) == threat_id else damage * 0.62)
+				_damage_threat(threat, damage if int(threat["id"]) == threat_id else damage * 0.70)
 	else:
 		_damage_threat(target, damage)
 	_dirty = true
@@ -945,10 +954,10 @@ func _damage_threat(threat: Dictionary, amount: float) -> void:
 	threat["hp"] = float(threat["hp"]) - amount
 	threat["hit_flash"] = 0.15
 	if float(threat["hp"]) <= 0.0:
-		var reward: int = 13 if threat["kind"] != "brute" else 40
+		var reward: int = 6 if threat["kind"] != "brute" else 18
 		coins += reward
 		stats["earned"] = float(stats.get("earned", 0.0)) + reward
-		supplies += 3 if threat["kind"] == "brute" else 1
+		supplies += 1 if threat["kind"] == "brute" else 0
 		stats["kills"] = int(stats.get("kills", 0)) + 1
 		_increment_stat("kills_" + str(threat["kind"]))
 		enemy_defeated.emit(int(threat["id"]), float(threat["x"]))
@@ -969,11 +978,11 @@ func defense_profile() -> Dictionary:
 	var population: int = present_population()
 	# A smooth population curve with fixed limits; wave numbers never add pressure.
 	var pressure: float = float(population)/(float(population)+20.0)
-	var interval_scale: float = lerpf(1.0,0.42,pressure)
+	var interval_scale: float = lerpf(1.0,0.70,pressure)*(1.2 if Cozy.staffed(self,"cafe") else 1.0)
 	return {"population":population,"pressure":pressure,"interval_scale":interval_scale,
 		"interval_min":WAVE_INTERVAL_MIN*interval_scale,"interval_max":WAVE_INTERVAL_MAX*interval_scale,
-		"count_min":2+roundi(6.0*pressure),"count_max":8+roundi(16.0*pressure),
-		"spawn_min":lerpf(2.5,1.6,pressure),"spawn_max":lerpf(5.0,3.0,pressure)}
+		"count_min":2+roundi(3.0*pressure),"count_max":5+roundi(6.0*pressure),
+		"spawn_min":lerpf(3.0,2.2,pressure),"spawn_max":lerpf(6.0,4.0,pressure)}
 
 func _reset_wave_rest() -> void:
 	var profile: Dictionary = defense_profile()
@@ -993,7 +1002,7 @@ func _tick_waves(delta: float) -> void:
 	if _wave_pending_reward and threats.is_empty() and _spawn_queue.is_empty():
 		_wave_pending_reward = false
 		stats["waves"] = int(stats.get("waves", 0)) + 1
-		var reward = _rng.randi_range(55, 105)
+		var reward = _rng.randi_range(20, 40)
 		coins += reward
 		stats["earned"] = float(stats.get("earned", 0.0)) + reward
 		if wave % 3 == 0:
@@ -1187,7 +1196,7 @@ func expedition_power(ids: Array, zone_index: int=-1) -> float:
 func expedition_cost(zone_index: int) -> int:
 	if zone_index < 0 or zone_index >= zones.size():
 		return 0
-	return int(zones[zone_index].get("cost", 4 + zone_index * 5))
+	return ceili(float(zones[zone_index].get("cost", 4 + zone_index * 5))*(0.75 if Cozy.staffed(self,"waterworks") else 1.0))
 
 func expedition_preview(zone_index: int, ids: Array) -> Dictionary:
 	if zone_index<0 or zone_index>=zones.size(): return {"valid":false,"can_depart":false,"reason":"Scegli una destinazione valida."}
@@ -1210,11 +1219,15 @@ func expedition_preview(zone_index: int, ids: Array) -> Dictionary:
 		if not gear.get("ready",false) and ammo_reason.is_empty():
 			ammo_reason = "%s: rifornisci l'arma personale oppure equipaggia la pistola gratuita." % citizen.name
 	var chance: float = clampf(0.35+power/float(zone.threat)*0.45,0.35,1.0) if not members.is_empty() else 0.0
+	if Cozy.staffed(self,"tailor") and chance>0: chance = minf(1.0,chance+(0.15 if Cozy.found(self,"observatory") else 0.10))
 	var full: Dictionary = {}
 	var reduced: Dictionary = {}
 	for resource: String in ["coins","supplies","gems","ammo"]:
 		full[resource] = int(zone.get(resource,0))
+		if resource in ["coins","supplies"] and Cozy.staffed(self,"bakery"): full[resource] = floori(float(full[resource])*(1.25 if Cozy.found(self,"campground") else 1.15))
 		reduced[resource] = 0 if resource=="gems" else int(int(full[resource])*EXPEDITION_PARTIAL_REWARD)
+	full["parts"] = 1+int(zone.threat)/25+(1 if Cozy.found(self,"outpost") and community.projects.has("radio") else 0)
+	reduced["parts"] = maxi(1,int(full.parts)/2)
 	var cost: int = expedition_cost(zone_index)
 	var reason: String = ""
 	if expedition.get("status","idle")!="idle": reason = "C'è già una squadra fuori dal rifugio."
@@ -1226,7 +1239,7 @@ func expedition_preview(zone_index: int, ids: Array) -> Dictionary:
 		"cost":cost,"duration":float(zone.duration),"full_rewards":full,"reduced_rewards":reduced,
 		"terrain":ExpeditionGear.terrain(zone),"loadout":loadout,"loadout_ready":ammo_reason.is_empty(),
 		"full_net_supplies":int(full.supplies)-cost,"reduced_net_supplies":int(reduced.supplies)-cost,
-		"success_damage":EXPEDITION_SUCCESS_DAMAGE,"failure_damage":EXPEDITION_FAILURE_DAMAGE,"health_floor":EXPEDITION_HEALTH_FLOOR}
+		"success_damage":expedition_damage(true),"failure_damage":expedition_damage(false),"health_floor":EXPEDITION_HEALTH_FLOOR}
 
 func start_expedition(zone_index: int, ids: Array) -> bool:
 	if expedition.get("status", "idle") != "idle":
@@ -1264,7 +1277,8 @@ func start_expedition(zone_index: int, ids: Array) -> bool:
 		"status": "running", "zone": zone_index, "name": zone["name"], "members": members,
 		"remaining": float(zone["duration"]), "duration": float(zone["duration"]), "power": power, "chance": chance,
 		"success": success, "rewards": preview.full_rewards.duplicate() if success else preview.reduced_rewards.duplicate(),
-		"loadout":preview.loadout.duplicate(true),"terrain":preview.terrain
+		"loadout":preview.loadout.duplicate(true),"terrain":preview.terrain,
+		"return_damage":int(preview.success_damage) if success else int(preview.failure_damage)
 	}
 	for citizen_id in members:
 		get_citizen(int(citizen_id))["away"] = true
@@ -1283,7 +1297,7 @@ func _tick_expedition(delta: float, offline: bool = false) -> void:
 			var citizen = get_citizen(int(citizen_id))
 			if not citizen.is_empty():
 				citizen["away"] = false
-				citizen["hp"] = maxi(EXPEDITION_HEALTH_FLOOR, int(citizen.get("hp", 100)) - (EXPEDITION_SUCCESS_DAMAGE if expedition.get("success", false) else EXPEDITION_FAILURE_DAMAGE))
+				citizen["hp"] = maxi(EXPEDITION_HEALTH_FLOOR, int(citizen.get("hp", 100)) - int(expedition.get("return_damage",expedition_damage(bool(expedition.get("success", false))))))
 		if not offline:
 			toast.emit("La squadra è tornata! Ritira il bottino nella mappa spedizioni.")
 			sfx.emit("reward")
@@ -1292,6 +1306,7 @@ func claim_expedition() -> bool:
 	if expedition.get("status", "idle") != "ready":
 		return false
 	var rewards: Dictionary = expedition.get("rewards", {})
+	community.parts += int(rewards.get("parts",0))
 	coins += int(rewards.get("coins", 0))
 	supplies += int(rewards.get("supplies", 0))
 	gems += int(rewards.get("gems", 0))
@@ -1300,7 +1315,11 @@ func claim_expedition() -> bool:
 	stats["expeditions"] = int(stats.get("expeditions", 0)) + 1
 	var zone_index = int(expedition.get("zone", 0))
 	if zone_index >= 0 and zone_index < zones.size():
-		_increment_stat("zone_" + str(zones[zone_index]["id"]))
+		var zone_id: String = str(zones[zone_index].id)
+		if not community.discoveries.has(zone_id):
+			community.discoveries.append(zone_id)
+			toast.emit("Scoperta: "+str(Cozy.DISCOVERIES[zone_id][0]))
+		_increment_stat("zone_" + zone_id)
 		_refresh_explored_zones()
 	toast.emit(("Spedizione riuscita!" if expedition.get("success", false) else "Spedizione difficile. Tutti sono tornati, con un bottino ridotto.") + " +%d monete, +%d provviste." % [int(rewards.get("coins", 0)),int(rewards.get("supplies", 0))])
 	expedition = {"status": "idle"}
@@ -1312,10 +1331,10 @@ func heal_citizen(citizen_id: int) -> bool:
 	var citizen = get_citizen(citizen_id)
 	if citizen.is_empty() or citizen.get("away", false) or citizen["hp"] >= 100:
 		return false
-	if supplies < 5:
-		toast.emit("Servono 5 provviste per curare un cittadino.")
+	if supplies < healing_cost():
+		toast.emit("Servono %d provviste per curare un cittadino." % healing_cost())
 		return false
-	supplies -= 5
+	supplies -= healing_cost()
 	citizen["hp"] = 100
 	_increment_stat("healed")
 	toast.emit(citizen["name"] + " si è ripreso completamente.")
@@ -1412,7 +1431,7 @@ func save_game() -> bool:
 	_highest_timestamp = maxf(_highest_timestamp, now)
 	var payload = {
 		"version": SAVE_VERSION, "timestamp": now, "highest_timestamp": _highest_timestamp,
-		"coins": coins, "supplies": supplies, "gems": gems, "citizens": citizens, "buildings": buildings,
+		"community":community, "coins": coins, "supplies": supplies, "gems": gems, "citizens": citizens, "buildings": buildings,
 		"wave": wave, "day": day, "gate_hp": gate_hp, "gate_max": gate_max, "gate_level": gate_level,
 		"ammo": ammo, "weapon": weapon, "owned_weapons": owned_weapons, "wave_clock": wave_clock,
 		"expedition": expedition, "quests": quests, "time_played": time_played, "stats": stats,
@@ -1460,6 +1479,10 @@ func load_game() -> bool:
 		push_warning("Salvataggio incompleto; mantenuta la nuova partita.")
 		return false
 	_is_loading = true
+	management_open = false
+	community = Cozy.fresh()
+	community.merge(data.get("community",{}),true)
+	for key: String in ["parts","request_index","request_day"]: community[key] = int(community[key])
 	_construction_sleep_at = -1.0
 	_construction_background_advanced = 0.0
 	coins = maxf(0.0, float(data.get("coins", 1000.0)))
@@ -1497,7 +1520,7 @@ func load_game() -> bool:
 	if not owned_weapons.has("pistol"):
 		owned_weapons.append("pistol")
 	wave_clock = clampf(float(data.get("wave_clock", 75.0)), 0.0, WAVE_INTERVAL_MAX)
-	_wave_wait_scale = clampf(float(data.get("wave_wait_scale",1.0)),0.42,1.0)
+	_wave_wait_scale = clampf(float(data.get("wave_wait_scale",1.0)),0.70,1.20)
 	if int(data.get("wave_rules", 0)) < 3:
 		wave_clock = minf(wave_clock, 75.0)
 	_arrivals_without_variant = clampi(int(data.get("arrivals_without_variant", 0)), 0, 2)
@@ -1554,6 +1577,9 @@ func load_game() -> bool:
 	_migrate_citizen_names()
 	_migrate_quests(data.get("quests", []), int(data.get("quest_content_version", 0)))
 	# A loaded game opens unpaused so a previously hidden modal cannot freeze play.
+	# Migrate previously explored places without granting resources a second time.
+	for zone: Dictionary in zones:
+		if int(stats.get("zone_"+str(zone.id),0))>0 and not community.discoveries.has(str(zone.id)): community.discoveries.append(str(zone.id))
 	paused = false
 	var now = Time.get_unix_time_from_system()
 	var saved_time = float(data.get("timestamp", now))
@@ -1565,6 +1591,7 @@ func load_game() -> bool:
 	_highest_timestamp = maxf(_highest_timestamp, now)
 	offline_report = {}
 	var completed_sites: int = _tick_construction(elapsed,true)
+	Cozy.tick(self,elapsed,true)
 	if elapsed >= 20.0:
 		var earned = _tick_products(elapsed, true)
 		_tick_expedition(elapsed, true)
@@ -1618,6 +1645,21 @@ func _normalize_personal_equipment(citizen: Dictionary) -> void:
 			citizen.personal_ammo[key] = int(citizen.personal_ammo[key])
 
 func _valid_save(data: Dictionary) -> bool:
+	if data.has("community"):
+		var c: Variant = data.community
+		if not c is Dictionary: return false
+		for key: String in ["parts","request_index","request_day"]:
+			if not _finite_number(c.get(key,0)) or float(c.get(key,0))<0 or float(c.get(key,0))!=floorf(float(c.get(key,0))): return false
+		for key: String in ["discoveries","projects"]:
+			if not c.get(key,[]) is Array: return false
+		var seen: Array = []
+		for id: Variant in c.get("discoveries",[]):
+			if not id is String or not Cozy.DISCOVERIES.has(id) or seen.has(id): return false
+			seen.append(id)
+		var projects: Array = c.get("projects",[])
+		if projects.size()>Cozy.PROJECTS.size(): return false
+		for i: int in range(projects.size()):
+			if projects[i]!=Cozy.PROJECTS[i].id: return false
 	if not data.get("citizens") is Array or not data.get("buildings") is Array:
 		return false
 	var history: Variant = data.get("stats",{})
@@ -1637,9 +1679,14 @@ func _valid_save(data: Dictionary) -> bool:
 			return false
 		for key: String in ["construction_duration","construction_remaining"]:
 			if building.has(key) and (not _finite_number(building[key]) or float(building[key])<0.0): return false
+		var svc: Variant = building.get("service",{})
+		if not svc is Dictionary or not str(svc.get("status","idle")) in ["idle","working","ready"]: return false
+		for key: String in ["remaining","amount"]:
+			if not _finite_number(svc.get(key,0)) or float(svc.get(key,0))<0 or float(svc.get(key,0))>86400: return false
 		var duration: float = float(building.get("construction_duration",0.0))
 		var remaining: float = float(building.get("construction_remaining",0.0))
-		if duration>MAX_CONSTRUCTION_TIME or remaining>duration: return false
+		# Preserve purchased timers from saves created before the cozy cap.
+		if duration>21600.0 or remaining>duration: return false
 		if remaining>0.0 and not building["workers"].is_empty(): return false
 		for product in building["products"]:
 			if not product is Dictionary or not product.has_all(["tier", "cost", "duration", "status", "remaining", "stock", "max_stock", "price", "sell_interval"]):
@@ -1652,6 +1699,7 @@ func _valid_save(data: Dictionary) -> bool:
 		return false
 	if saved_expedition.get("status", "idle") != "idle" and not saved_expedition.has_all(["remaining", "duration", "members", "rewards"]):
 		return false
+	if saved_expedition.has("return_damage") and (not _finite_number(saved_expedition.return_damage) or float(saved_expedition.return_damage)<0 or float(saved_expedition.return_damage)>25): return false
 	if saved_expedition.has("loadout"):
 		if not saved_expedition.loadout is Array: return false
 		for entry: Variant in saved_expedition.loadout:
@@ -1679,6 +1727,9 @@ func _valid_save(data: Dictionary) -> bool:
 	return true
 
 func _valid_optional_outside_fields(visitor: Dictionary) -> bool:
+	if str(visitor.get("observation","")) not in ["","waiting","done"]: return false
+	if not _finite_number(visitor.get("observation_remaining",0)) or float(visitor.get("observation_remaining",0))<0 or float(visitor.get("observation_remaining",0))>60: return false
+	if not visitor.get("answers",{}) is Dictionary: return false
 	for numeric_key in ["hit_flash"]:
 		if visitor.has(numeric_key) and not _finite_number(visitor[numeric_key]):
 			return false
@@ -1717,3 +1768,54 @@ func reset_game() -> void:
 	toast.emit("Un nuovo inizio. Il rifugio conta su di te!")
 	changed.emit()
 
+
+func community_income_bonus() -> float:
+	return 1.0+minf(0.30,float(present_population())*0.015)
+
+func healing_cost() -> int:
+	return maxi(1,(2 if Cozy.staffed(self,"clinic") else 5)-(1 if Cozy.found(self,"pharmacy") else 0))
+
+func expedition_damage(success: bool) -> int:
+	var damage: int = EXPEDITION_SUCCESS_DAMAGE if success else EXPEDITION_FAILURE_DAMAGE
+	return maxi(1,damage/2) if Cozy.staffed(self,"clinic") else damage
+
+func _fill_shelves(building: Dictionary, product: Dictionary) -> void:
+	product.status = "stocked"
+	product.stock = int(product.max_stock)
+	product.sale_clock = 0.0
+	_increment_stat("restocked")
+	_increment_stat("stocked_"+str(building.type))
+
+func batch_preview(building_id: int=-1) -> Dictionary:
+	var result: Dictionary = {"cost":0,"supplies":0,"ready":0,"start":0}
+	for b: Dictionary in buildings:
+		if (building_id>=0 and int(b.id)!=building_id) or is_under_construction(b): continue
+		for p: Dictionary in b.products:
+			if p.status=="ready": result.ready += 1
+			elif p.status=="empty" and _available_workers(b)>=int(p.tier):
+				result.start += 1
+				result.cost += int(p.cost)
+				result.supplies += int(p.get("supply_cost",0))
+	return result
+
+func batch_production(building_id: int=-1, expose: bool=false) -> bool:
+	var quote: Dictionary = batch_preview(building_id)
+	if expose and int(quote.ready)==0: return false
+	if not expose and (int(quote.start)==0 or coins<int(quote.cost) or supplies<int(quote.supplies)): return false
+	# The batch is quoted before any spending and committed once after all eligible products.
+	for b: Dictionary in buildings:
+		if (building_id>=0 and int(b.id)!=building_id) or is_under_construction(b): continue
+		for p: Dictionary in b.products:
+			if (expose and p.status=="ready") or (not expose and p.status=="empty" and _available_workers(b)>=int(p.tier)): restock(int(b.id),int(p.tier),true)
+	toast.emit("Merce pronta esposta in tutte le botteghe selezionate." if expose else "Produzioni avviate. Il costo mostrato è stato pagato una sola volta.")
+	sfx.emit("cash" if expose else "click")
+	_commit()
+	return true
+
+func repair_with_materials() -> bool:
+	if community.parts<2 or gate_hp>=gate_max: return false
+	community.parts -= 2
+	gate_hp = gate_max
+	_increment_stat("repaired")
+	_commit()
+	return true

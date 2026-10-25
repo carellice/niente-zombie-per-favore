@@ -43,7 +43,10 @@ static func show_catalog(ui: CanvasLayer) -> void:
 	ui.set_selected_tab("build")
 	var col: VBoxContainer = ui._open("build","Costruisci il rifugio","PIANO DI ESPANSIONE")
 	ui._last_panel_signature = ui._build_catalog_signature()
-	col.add_child(ui._copy("Le case aggiungono letti; i negozi producono merci da vendere. Ogni cantiere richiede tempo e i lavori diventano più lunghi man mano che il rifugio cresce.",18))
+	col.add_child(ui._copy("Scegli cosa serve alla comunità. Ogni bottega vende merci e dà un contributo diverso con un lavoratore presente.",18))
+	if Game.buildings.size()>=3:
+		ui.CozyPanel.heading(ui,col,"Le botteghe, insieme")
+		ui.CozyPanel.batch(ui,col)
 	var site: Dictionary = Game.active_construction()
 	if Game.tutorial_active() and not site.is_empty():
 		col.add_child(ui._button("Guarda il cantiere in corso",ui._construction_focus.bind(int(site.id)),true))
@@ -64,7 +67,7 @@ static func show_catalog(ui: CanvasLayer) -> void:
 		card.add_theme_constant_override("separation",12)
 		var panel: PanelContainer = card.get_parent()
 		panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		panel.custom_minimum_size.y = 288 if DeviceLayout.android_phone() else 260
+		panel.custom_minimum_size.y = 260 if DeviceLayout.android_phone() else 248
 		var header: HBoxContainer = ui._hbox(16)
 		header.custom_minimum_size.y = 88
 		var picture: TextureRect = ui._painted_icon(_art(kind),Vector2(112,88),"building_"+kind)
@@ -82,7 +85,7 @@ static func show_catalog(ui: CanvasLayer) -> void:
 		count.name = "BuildCount_"+kind
 		card.add_child(count)
 		ui.bindings.append([count,func(label: Label) -> void: label.text = _count_text(kind)])
-		var description: Label = ui._copy(entry[2],18)
+		var description: Label = ui._copy(Game.Cozy.role(Game,kind),18)
 		description.custom_minimum_size.y = 64 if DeviceLayout.android_phone() else 48
 		card.add_child(description)
 		var spacer: Control = Control.new()

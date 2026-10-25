@@ -1,7 +1,7 @@
 extends RefCounted
 ## Landscape phone pages: one scroll surface, a narrow control rail and real gutters.
 
-const TITLES = {"armory":"Armeria","weapon_details":"Caratteristiche arma","visitor":"Accoglienza","citizens":"Cittadini","citizen_equipment":"Equipaggiamento","assignment":"Lavoratori","job_select":"Assegna un lavoro","build":"Costruisci","expeditions":"Spedizioni","demolition":"Demolizione","gate":"Difese del cancello","quests":"Diario del rifugio","help":"Come si gioca","pause":"Pausa","settings":"Impostazioni","credits":"Crediti","reset":"Nuova partita","tutorial_intro":"Benvenuto al rifugio"}
+const TITLES = {"armory":"Armeria","weapon_details":"Caratteristiche arma","visitor":"Una porta aperta","citizens":"Cittadini","citizen_equipment":"Equipaggiamento","assignment":"Lavoratori","job_select":"Assegna un lavoro","build":"Costruisci","expeditions":"Spedizioni","demolition":"Demolizione","gate":"Difese del cancello","quests":"Diario del rifugio","help":"Come si gioca","pause":"Pausa","settings":"Impostazioni","credits":"Crediti","reset":"Nuova partita","tutorial_intro":"Benvenuto al rifugio"}
 const ICONS = {"armory":"gun","weapon_details":"gun","visitor":"person","citizens":"people","citizen_equipment":"gun","assignment":"people","job_select":"people","build":"build","expeditions":"compass","demolition":"build","gate":"shield","quests":"bill","help":"help","pause":"pause","settings":"sound","credits":"heart"}
 
 static func open_page(ui: CanvasLayer, kind: String, title: String, id: int, saved_scroll: int, continuing: bool) -> VBoxContainer:
@@ -48,14 +48,12 @@ static func open_page(ui: CanvasLayer, kind: String, title: String, id: int, sav
 	var section: Control = ui._icon(str(ICONS.get(kind,"home")),40,ui.SAGE)
 	section.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	rail.add_child(section)
+	var calm: Label = ui._label("ZOMBIE\nIN PAUSA",13,ui.SAGE,true)
+	calm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	rail.add_child(calm)
 	var page_column: VBoxContainer = ui._vbox(8)
 	page_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	columns.add_child(page_column)
-	var balance_inset: MarginContainer = MarginContainer.new()
-	for edge: String in ["left","right"]: balance_inset.add_theme_constant_override("margin_"+edge,24)
-	page_column.add_child(balance_inset)
-	ui._add_purchase_balances(balance_inset,kind)
-	balance_inset.visible = ui.PURCHASE_PANELS.has(kind)
 	var scroll: ScrollContainer = ScrollContainer.new()
 	scroll.name = "PhonePageScroll"
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -70,14 +68,16 @@ static func open_page(ui: CanvasLayer, kind: String, title: String, id: int, sav
 	for edge: String in ["left","right"]: inset.add_theme_constant_override("margin_"+edge,24)
 	for edge: String in ["top","bottom"]: inset.add_theme_constant_override("margin_"+edge,16)
 	scroll.add_child(inset)
-	var page: VBoxContainer = ui._vbox(18)
+	var page: VBoxContainer = ui._vbox(20)
 	page.name = "PhonePageBody"
 	inset.add_child(page)
 	ui._phone_page = page
-	var heading: Label = ui._copy(str(TITLES.get(kind,title)),32,ui.TEXT)
+	var heading: Label = ui._copy(str(TITLES.get(kind,title)),29,ui.TEXT)
 	heading.name = "PhonePageTitle"
 	heading.add_theme_font_override("font",ui.heading)
 	page.add_child(heading)
+	ui._add_purchase_balances(page,kind)
+
 	ui.modal_navigation = ui._hbox(16)
 	ui.modal_navigation.name = "DialogNavigation"
 	page.add_child(ui.modal_navigation)
@@ -100,58 +100,7 @@ static func open_page(ui: CanvasLayer, kind: String, title: String, id: int, sav
 	return ui.modal_content
 
 static func pause_menu(ui: CanvasLayer) -> void:
-	var col: VBoxContainer = ui._open("pause","Partita in pausa","PAUSA")
-	var title: Label = ui._phone_page.get_node("PhonePageTitle")
-	title.text = "Partita in pausa"
-	col.add_child(ui._copy("Giorno %d · %d abitanti · Il tempo di gioco è fermo." % [Game.day,Game.citizens.size()],22,ui.MUTED))
-	var resume: Button = ui._button("Riprendi la partita",ui._resume_from_pause,true)
-	resume.name = "PauseResume"
-	resume.custom_minimum_size.y = 84
-	col.add_child(resume)
-	var options: GridContainer = GridContainer.new()
-	options.columns = 2
-	options.add_theme_constant_override("h_separation",16)
-	options.add_theme_constant_override("v_separation",16)
-	col.add_child(options)
-	for entry: Array in [["sound","Impostazioni","Audio, interfaccia e schermo","settings"],["help","Come si gioca","Comandi e regole del rifugio","help"]]:
-		var button: Button = ui._button("",ui._pause_options.bind(entry[3]))
-		button.name = "PauseSettings" if entry[3]=="settings" else "PauseHelp"
-		button.custom_minimum_size.y = 104
-		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		options.add_child(button)
-		var contents: HBoxContainer = ui._hbox(14)
-		contents.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		contents.offset_left = 16
-		contents.offset_right = -16
-		contents.offset_top = 12
-		contents.offset_bottom = -12
-		contents.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		button.add_child(contents)
-		var icon: Control = ui._icon(entry[0],44)
-		icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		contents.add_child(icon)
-		var info: VBoxContainer = ui._vbox(4)
-		info.alignment = BoxContainer.ALIGNMENT_CENTER
-		info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		info.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		contents.add_child(info)
-		var heading: Label = ui._copy(entry[1],24,ui.TEXT)
-		heading.add_theme_font_override("font",ui.heading)
-		info.add_child(heading)
-		info.add_child(ui._copy(entry[2],22,ui.MUTED))
-	var saving: VBoxContainer = ui._card(col)
-	var save_row: HBoxContainer = ui._hbox(16)
-	saving.add_child(save_row)
-	var status: Label = ui._copy("Salvataggio automatico attivo.",22,ui.SAGE)
-	status.name = "PauseSaveStatus"
-	save_row.add_child(status)
-	var save: Button = ui._button("Salva adesso",ui._save_from_pause)
-	save.name = "PauseSave"
-	save_row.add_child(save)
-	var menu: Button = ui._button("Salva e torna al menu principale",ui._return_to_main_menu,false,true)
-	menu.name = "PauseMainMenu"
-	col.add_child(menu)
-	col.add_child(ui._copy("Potrai continuare da qui quando vuoi.",22,ui.MUTED))
+	ui.CozyPanel.pause(ui)
 
 static func layout(ui: CanvasLayer) -> void:
 	if not is_instance_valid(ui._phone_safe): return
@@ -166,7 +115,7 @@ static func polish(ui: CanvasLayer) -> void:
 	if not is_instance_valid(ui._phone_page): return
 	# Text must wrap before a minimum width can push the page past its right gutter.
 	for label: Node in ui._phone_page.find_children("*","Label",true,false):
-		label.add_theme_font_size_override("font_size",maxi(22,label.get_theme_font_size("font_size")))
+		label.add_theme_font_size_override("font_size",maxi(20,label.get_theme_font_size("font_size")))
 		if label.text.length()>24:
 			label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -222,7 +171,7 @@ static func main_menu(ui: CanvasLayer) -> void:
 	logo.add_theme_color_override("font_outline_color",ui.WOOD)
 	logo.add_theme_constant_override("outline_size",4)
 	hero.add_child(logo)
-	hero.add_child(ui._copy("Costruisci. Accogli. Difendi.",22,ui.CREAM))
+	hero.add_child(ui._copy("Il tuo piccolo angolo di mondo.\nCostruisci, accogli, prenditi il tuo tempo.",22,ui.CREAM))
 	var cabinet: PanelContainer = PanelContainer.new()
 	ui._menu_cabinet = cabinet
 	cabinet.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -237,7 +186,7 @@ static func main_menu(ui: CanvasLayer) -> void:
 	scroll.add_child(choices)
 	var play: Button = ui._button("Continua la partita  →" if ui._menu_had_save else "Gioca  →",ui._start_game,true)
 	play.name = "PlayButton"
-	play.custom_minimum_size.y = 94
+	play.custom_minimum_size.y = 82
 	choices.add_child(play)
 	var grid: GridContainer = GridContainer.new()
 	grid.columns = 2
@@ -246,7 +195,7 @@ static func main_menu(ui: CanvasLayer) -> void:
 	choices.add_child(grid)
 	for entry: Array in [["home","Nuova partita",ui._confirm_reset],["sound","Impostazioni",ui._show_settings],["heart","Crediti",ui._show_credits],["cross","Esci",ui._quit_game]]:
 		var button: Button = ui._button("",entry[2])
-		button.custom_minimum_size = Vector2(190,108)
+		button.custom_minimum_size = Vector2(190,92)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var group: VBoxContainer = ui._button_stack(button,6)
 		var center: CenterContainer = CenterContainer.new()

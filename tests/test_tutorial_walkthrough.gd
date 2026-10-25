@@ -140,7 +140,7 @@ func run() -> void:
 	var visitor: Dictionary = game.visitors[0]
 	await world_click(Vector2(scene._sx(float(visitor.x)),scene._ground()-30.0*scene.zoom))
 	expect(ui.panel_kind=="visitor" and ui.panel_id==int(visitor.id),"Street pointer opens the arriving survivor's own admission card")
-	if not await press("✓  Accogli nel rifugio",ui.modal):
+	if not await press("Accogli nel rifugio",ui.modal):
 		await finish(preferences)
 		return
 	expect(game.citizens.size()==1 and game.visitors.is_empty(),"Admission transfers the actual visitor into the refuge")

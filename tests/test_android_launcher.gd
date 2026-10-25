@@ -39,9 +39,13 @@ func run() -> void:
 	var boot: Image = Image.new()
 	expect(boot.load_png_from_buffer(apk.read_file("assets/assets/android/icon_foreground.png"))==OK,"Native boot splash PNG shipped unmodified")
 	expect(apk.file_exists("assets/loading.tscn.remap") and apk.file_exists("assets/scripts/loading_screen.gdc"),"Real loading scene and script shipped")
-	for script: String in ["armory_panel","build_panel","expedition_panel","phone_pages","citizen_roaming","construction_panel","construction_visual","expedition_gear","citizen_equipment_panel","building_signage","demolition_panel"]:
+	for script: String in ["armory_panel","build_panel","expedition_panel","phone_pages","citizen_roaming","construction_panel","construction_visual","expedition_gear","citizen_equipment_panel","building_signage","demolition_panel","cozy_rules","cozy_panel"]:
 		expect(apk.file_exists("assets/scripts/"+script+".gdc"),"New UI controller shipped: "+script)
 	var cherry_import: ConfigFile = ConfigFile.new()
+	var radio_import: ConfigFile = ConfigFile.new()
+	var radio_loaded: bool = radio_import.parse(apk.read_file("assets/assets/art/community-radio.png.import").get_string_from_utf8())==OK
+	var radio_texture: String = str(radio_import.get_value("remap","path",""))
+	expect(radio_loaded and not radio_texture.is_empty() and apk.file_exists("assets/"+radio_texture.trim_prefix("res://")),"Cozy community radio texture is shipped")
 	var imported: bool = cherry_import.parse(apk.read_file("assets/assets/art/cherries.png.import").get_string_from_utf8())==OK
 	var cherry_texture: String = str(cherry_import.get_value("remap","path",""))
 	expect(imported and not cherry_texture.is_empty() and apk.file_exists("assets/"+cherry_texture.trim_prefix("res://")),"Chiara's painted cherries and their imported texture are shipped")

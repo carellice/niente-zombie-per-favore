@@ -47,7 +47,7 @@ func _initialize() -> void:
 		var artwork: Texture2D = load("res://assets/art/weapons/%s.png" % icon) as Texture2D
 		expect(artwork != null and artwork.get_width() >= 512, "Painted imagegen artwork shipped: " + icon)
 	expect(ResourceLoader.exists("res://assets/art/survivors-expanded.png"), "Expanded character art shipped")
-	var new_art: Array[String] = ["res://assets/art/population.png"]
+	var new_art: Array[String] = ["res://assets/art/population.png","res://assets/art/community-radio.png"]
 	for product: String in ["biscuit","breakfast","vegetables","tools","repair","cloth","bandage","medkit","medicine","water","bread"]:
 		new_art.append("res://assets/art/products/%s.png" % product)
 	for building: String in ["bakery","waterworks","tailor"]:
@@ -64,5 +64,6 @@ func _initialize() -> void:
 	expect(catalog.BUILDING_NAMES.size()==8, "Eight building types shipped")
 	expect(catalog.ZONES.size()==9, "Nine expedition destinations shipped")
 	expect(catalog.make_quests().size()==32, "Thirty-two diary goals shipped")
+	expect(ResourceLoader.exists("res://scripts/cozy_rules.gd") and ResourceLoader.exists("res://scripts/cozy_panel.gd"),"Cozy gameplay and redesigned panels shipped")
 	print("REVISION PACKAGE: %d checks, %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)

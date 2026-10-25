@@ -18,7 +18,7 @@ static func show_panel(ui: CanvasLayer, id: int) -> void:
 	if citizen.is_empty(): return
 	var col: VBoxContainer = ui._open("citizen_equipment","Armi e munizioni personali",str(citizen.name).to_upper(),id)
 	ui._citizen_name(col,citizen)
-	col.add_child(ui._copy("Ogni acquisto appartiene solo a questo cittadino. Le copie della torretta e le sue munizioni restano separate. Comprare un'arma la equipaggia e include la prima scorta; puoi poi cambiare gratuitamente tra le sue armi.",18))
+	col.add_child(ui._copy("Una copia e una scorta per questa persona. Acquistare equipaggia l’arma e include i primi colpi. La pistola resta sempre gratuita.",18))
 	if bool(citizen.get("away",false)):
 		col.add_child(ui._copy("In spedizione: potrai acquistare, rifornire o cambiare arma al rientro.",20,ui.GOLD))
 	var zone_index: int = ui.selected_zone if ui._equipment_from_expedition else -1
@@ -27,10 +27,16 @@ static func show_panel(ui: CanvasLayer, id: int) -> void:
 		col.add_child(ui._copy("Per %s · %s" % [zone.name,Game.ExpeditionGear.TERRAINS[Game.ExpeditionGear.terrain(zone)]],21,ui.SAGE))
 	else:
 		col.add_child(ui._copy("Pompa per spazi stretti, precisione per spazi aperti, mitragliatore per zone affollate. La schermata della squadra confronta potenza e consumo per la destinazione scelta.",18,ui.SAGE))
+	var grid: GridContainer = GridContainer.new()
+	grid.columns = 2
+	grid.set_meta("phone_grid",true)
+	grid.add_theme_constant_override("h_separation",16)
+	grid.add_theme_constant_override("v_separation",16)
+	col.add_child(grid)
 	for key: String in ["pistol","shotgun","sniper","smg"]:
 		var definition: Dictionary = Game.ExpeditionGear.WEAPONS[key]
 		var preview: Dictionary = Game.citizen_gear_preview(id,key,zone_index)
-		var card: VBoxContainer = ui._card(col,ui.SAGE if preview.equipped else ui.BORDER)
+		var card: VBoxContainer = ui._card(grid,ui.SAGE if preview.equipped else ui.BORDER)
 		card.set_meta("personal_weapon",key)
 		var row: HBoxContainer = ui._hbox(16)
 		row.add_child(ui._weapon_icon(key,Vector2(78,54)))

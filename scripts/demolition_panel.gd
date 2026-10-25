@@ -13,6 +13,7 @@ static func _summary(id: int) -> String:
 	if int(preview.stock)>0: losses.append("%d unità sugli scaffali" % int(preview.stock))
 	if int(preview.ready_batches)>0: losses.append("produzioni pronte: %d" % int(preview.ready_batches))
 	if int(preview.restocking)>0: losses.append("rifornimenti in corso: %d" % int(preview.restocking))
+	if str(preview.get("service_loss","idle")) in ["working","ready"]: losses.append("contributo per il rifugio in corso o pronto")
 	if not losses.is_empty(): text += "\nMerci perse: "+", ".join(losses)+"."
 	return text
 

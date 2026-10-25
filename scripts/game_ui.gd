@@ -1,5 +1,7 @@
 extends CanvasLayer
 
+const CozyPanel = preload("res://scripts/cozy_panel.gd")
+const CozyRules = preload("res://scripts/cozy_rules.gd")
 const Typography = preload("res://scripts/typography.gd")
 const ActorVisuals = preload("res://scripts/actor_visuals.gd")
 const HUDIcons = preload("res://scripts/hud_icons.gd")
@@ -26,13 +28,13 @@ signal game_started
 signal main_menu_opened
 
 const INK = Color("453b2e")
-const PANEL = Color("f2e7ce")
-const CARD = Color("faf1db")
-const BORDER = Color("c6aa78")
+const PANEL = Color("f5edda")
+const CARD = Color("fff8e8")
+const BORDER = Color("d7c5a2")
 const TEXT = Color("493d2d")
 const MUTED = Color("796a50")
 const GOLD = Color("9c682b")
-const SAGE = Color("526d42")
+const SAGE = Color("526f55")
 const RED = Color("ad4f3d")
 const CREAM = Color("fff1d4")
 const CREAM_EDGE = Color("c4a573")
@@ -42,9 +44,9 @@ const WOOD_EDGE = Color("a77b4b")
 const LIGHT = Color("fff1d6")
 const MODAL_APPEAR_DURATION = 0.26
 const WEAPON_COPY = {
-	"pistol":["Pistola di servizio","Affidabile e potente. Munizioni infinite.","Gittata medio-corta"],
-	"shotgun":["Fucile a pompa","Un colpo, più bersagli. Perfetto a corta distanza.","Gittata corta"],
-	"sniper":["Fucile di precisione","Danno elevato e colpi critici. Ideale contro i bruti.","Gittata molto lunga"],
+	"pistol":["Pistola di servizio","Un colpo contro i classici. Affidabile, con munizioni infinite.","Gittata medio-corta"],
+	"shotgun":["Fucile a pompa","Ferma più zombie classici con un colpo. Ideale quando si avvicinano in gruppo.","Gittata corta"],
+	"sniper":["Fucile di precisione","Un colpo ferma un colosso. Grande portata, richiede una pausa tra i tiri.","Gittata molto lunga"],
 	"smg":["Mitragliatore","Raffiche rapide: tieni premuto su uno zombie per continuare a sparare.","Gittata media"]
 }
 
@@ -99,6 +101,8 @@ var nav_buttons: Dictionary = {}
 var bindings: Array = []
 var selected_members: Array = []
 var selected_zone: int = 0
+var building_tab: String = "production"
+var journal_tab: String = "projects"
 var expedition_step: int = 0
 var _equipment_from_expedition: bool = false
 var toast_stack: VBoxContainer
@@ -252,9 +256,9 @@ func _style(bg: Color, border: Color = BORDER, radius: int = 14, padding: int = 
 
 func _raised(bg: Color, border: Color, radius: int = 14, pressed: bool = false, padding: int = 14) -> StyleBoxFlat:
 	var s: StyleBoxFlat = _style(bg,border,radius,padding)
-	s.border_width_bottom = 5 if not pressed else 2
+	s.border_width_bottom = 3 if not pressed else 1
 	s.border_width_top = 2
-	s.shadow_color = Color(0.12,0.09,0.06,.28)
+	s.shadow_color = Color(0.12,0.09,0.06,.16)
 	s.shadow_size = 2
 	s.shadow_offset = Vector2(0,1 if pressed else 3)
 	return s
@@ -1276,6 +1280,7 @@ func _open(kind: String, title: String, subtitle: String = "DOSSIER DEL RIFUGIO"
 		modal.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		modal.queue_free()
 	bindings.clear()
+	Game.management_open = true
 	panel_kind = kind
 	_settings_grid = null
 	_phone_safe = null
@@ -1378,22 +1383,28 @@ func _fixed_actions() -> VBoxContainer:
 	return modal_actions
 
 func _add_purchase_balances(parent: Node, kind: String) -> void:
-	if not PURCHASE_PANELS.has(kind): return
-	var row: HBoxContainer = _hbox(12)
+	if not PURCHASE_PANELS.has(kind) and kind!="quests": return
+	var row: HBoxContainer = _hbox(16)
 	row.name = "DialogBalances"
 	parent.add_child(row)
-	for entry: Array in [["coin","MONETE","coins","DialogCoins"],["crate","PROVVISTE","supplies","DialogSupplies"],["bill","BANCONOTE","gems","DialogBills"]]:
-		var key: String = str(entry[2])
-		var label: Label = _resource_pill(row,str(entry[0]),str(entry[1]),GOLD if key=="coins" else SAGE,108)
+	for entry: Array in [["coin","monete","coins","DialogCoins"],["crate","provviste","supplies","DialogSupplies"],["bill","banconote","gems","DialogBills"],["build","materiali","parts","DialogParts"]]:
+		var group: HBoxContainer = _hbox(6)
+		group.add_child(_icon(str(entry[0]),28))
+		var key: String = entry[2]
+		var label: Label = _label("",17,SAGE)
 		label.name = str(entry[3])
-		label.text = str(int(Game.get(key)))
-		bindings.append([label,func(value: Label) -> void: value.text = str(int(Game.get(key)))])
+		var update: Callable = func(l: Label) -> void: l.text = "%d %s" % [int(Game.community.parts) if key=="parts" else int(Game.get(key)),entry[1]]
+		update.call(label)
+		bindings.append([label,update])
+		group.add_child(label)
+		row.add_child(group)
 
 func _citizen_name(parent: Node, citizen: Dictionary, font_size: int=24) -> void:
 	var row: HBoxContainer = _hbox(8)
 	row.name = "CitizenName_"+str(citizen.get("id",0))
 	parent.add_child(row)
-	var label: Label = _label(str(citizen.get("name","Superstite")),font_size,TEXT,true)
+	var label: Label = _copy(str(citizen.get("name","Superstite")),font_size,TEXT)
+	label.add_theme_font_override("font",heading)
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	row.add_child(label)
 	if SurvivorCatalog.is_nurse(int(citizen.get("look",0))):
@@ -1496,6 +1507,7 @@ func _close_modal() -> void:
 	_modal_shade = null
 	_modal_shade_start_alpha = 0.0
 	_modal_motion_progress = 1.0
+	Game.management_open = false
 	panel_kind = ""
 	panel_id = -1
 	bindings.clear()
@@ -1508,14 +1520,18 @@ func _close_modal() -> void:
 
 func _card(parent: Node, tint: Color = BORDER) -> VBoxContainer:
 	var p: PanelContainer = PanelContainer.new()
+	p.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var card_style: StyleBoxFlat = _style(CARD,BORDER if tint==BORDER else tint,16,14 if DeviceLayout.android_phone() else 14 if DeviceLayout.mobile else 18)
-	card_style.border_width_bottom = 4
+	card_style.border_width_left = 1
+	card_style.border_width_right = 1
+	card_style.border_width_top = 1
+	card_style.border_width_bottom = 2
 	card_style.shadow_color = Color(0.21,0.16,0.08,.08)
-	card_style.shadow_size = 1
+	card_style.shadow_size = 3
 	card_style.shadow_offset = Vector2(0,2)
 	p.add_theme_stylebox_override("panel",card_style)
 	parent.add_child(p)
-	var v: VBoxContainer = _vbox(8 if DeviceLayout.mobile else 10)
+	var v: VBoxContainer = _vbox(12)
 	p.add_child(v)
 	return v
 
@@ -1552,109 +1568,13 @@ func _refresh_current() -> void:
 		"job_select": _show_job_select(panel_id)
 
 func _building_signature(b: Dictionary) -> String:
-	var states: Array = [b.workers,Game.is_under_construction(b)]
+	var states: Array = [b.workers,Game.is_under_construction(b),b.get("storage_upgraded",false),b.get("auto_shelves",false)]
 	for p in b.get("products",[]):
 		states.append(p.get("status","empty"))
 	return JSON.stringify(states)
 
 func show_building(id: int) -> void:
-	var b: Dictionary = _building(id)
-	if b.is_empty():
-		return
-	var col: VBoxContainer = _open("building",b.name,"LOTTO %02d  /  %s" % [Game.buildings.find(b)+1,_type_name(b.type).to_upper()],id)
-	_last_panel_signature = _building_signature(b)
-	col.add_child(_copy("Tieni premuto sull'edificio o sulla sua insegna per aprire la demolizione.",14))
-	if Game.is_under_construction(b):
-		ConstructionPanel.show_site(self,col,b)
-		return
-	if b.type == "residence":
-		var c: VBoxContainer = _card(col)
-		_title_row(c,"Una porta aperta, una nuova vita.","ALLOGGI",SAGE)
-		c.add_child(_copy("Le case aumentano i posti disponibili. Quando un superstite arriva al cancello, controlla i suoi talenti e dagli una possibilità."))
-		var h: HBoxContainer = _hbox()
-		h.add_child(_painted_icon(ProductIcons.population(),Vector2(38,38),"population"))
-		h.add_child(_label("%d / %d posti occupati" % [Game.citizens.size(),Game.capacity()],24,TEXT,true))
-		c.add_child(h)
-		c.add_child(_button("Conosci i cittadini  →",_show_citizens,true))
-		col.add_child(_copy("Ogni casa ospita 5 persone. Costruisci un nuovo alloggio prima di raggiungere il limite.",14))
-		return
-	if not DeviceLayout.android_phone():
-		var purpose: VBoxContainer = _card(col,SAGE)
-		var purpose_row: HBoxContainer = _hbox(14)
-		purpose_row.add_child(_product_icon(str(b.type),1,56))
-		var purpose_info: VBoxContainer = _vbox(4)
-		purpose_info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		purpose_info.add_child(_label("Un'attività che fa guadagnare monete",20,TEXT,true))
-		purpose_info.add_child(_copy(str(Game.BUILDING_DESCRIPTIONS.get(str(b.type),"Prepara merci da vendere automaticamente nel rifugio.")),15,TEXT))
-		purpose_row.add_child(purpose_info)
-		purpose.add_child(purpose_row)
-		purpose.add_child(_copy("1. Assegna i lavoratori   →   2. Rifornisci   →   3. Riempi gli scaffali",15,SAGE))
-		purpose.add_child(_copy("Le merci sugli scaffali si vendono da sole e generano monete.",14))
-	var staff: VBoxContainer = _card(col)
-	var names: PackedStringArray = []
-	for cid in b.workers:
-		names.append(_citizen(int(cid)).get("name",""))
-	var staff_row: HBoxContainer = _hbox(14)
-	var staff_info: VBoxContainer = _vbox(4)
-	staff_info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	staff_info.add_child(_label("La squadra  ·  %d / 3 lavoratori" % b.workers.size(),19,TEXT,true))
-	staff_info.add_child(_copy(", ".join(names) if not names.is_empty() else "Nessun lavoratore assegnato.",14))
-	staff_row.add_child(staff_info)
-	staff_row.add_child(_button("Gestisci i lavoratori",_show_assignment.bind(id),false,true))
-	staff.add_child(staff_row)
-	staff.add_child(_copy("Affinità utile: %s. Ogni lavoratore sblocca un prodotto; il talento riduce tempi e costi." % _skill_name(str(b.type)),14,SAGE))
-	for p in b.get("products",[]):
-		var tier: int = int(p.get("tier",1))
-		var unlocked: bool = b.workers.size()>=tier
-		var status: String = p.get("status","empty")
-		if DeviceLayout.android_phone() and not unlocked:
-			var locked: VBoxContainer = _card(col)
-			var locked_row: HBoxContainer = _hbox(14)
-			locked_row.add_child(_product_icon(str(b.type),tier,46))
-			locked_row.add_child(_copy("%s · Servono %d lavoratori" % [str(p.get("name","Prodotto")),tier],22,MUTED))
-			locked.add_child(locked_row)
-			continue
-		var c: VBoxContainer = _card(col,SAGE if status=="ready" else BORDER)
-		var product_row: HBoxContainer = _hbox(14)
-		product_row.add_child(_product_icon(str(b.type),tier,74))
-		var product_info: VBoxContainer = _vbox(3)
-		product_info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		var product_title: Label = _label(str(p.get("name","Prodotto %d" % tier)),22,TEXT,true)
-		product_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		product_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		product_info.add_child(product_title)
-		product_info.add_child(_label("PRODOTTO IN VENDITA  ·  %d %s" % [tier,"LAVORATORE" if tier==1 else "LAVORATORI"],13,GOLD,true))
-		var descriptions: Array = Game.PRODUCT_DESCRIPTIONS.get(str(b.type),[])
-		var description: String = str(descriptions[tier-1]) if descriptions.size()>=tier else "Merce preparata nel negozio per i clienti del rifugio."
-		product_info.add_child(_copy(description,14))
-		product_row.add_child(product_info)
-		c.add_child(product_row)
-		c.add_child(_copy("Ogni vendita: %.0f monete  ·  Scaffale pieno: %d pezzi" % [float(p.get("price",0)),int(p.get("max_stock",0))],14,SAGE))
-		if not unlocked:
-			c.add_child(_copy("Assegna %d lavoratori per sbloccare questo prodotto." % tier,14))
-		elif status == "stocked":
-			_bind_label(c,func(l: Label) -> void: l.text = "Vendite automatiche attive  ·  %d / %d pezzi rimasti" % [p.stock,p.max_stock],14,SAGE)
-			var bar: ProgressBar = _progress(SAGE)
-			c.add_child(bar)
-			bindings.append([bar,func(v: ProgressBar) -> void: v.value = float(p.stock)/maxf(float(p.max_stock),1.0)*100])
-		elif status == "restocking":
-			_bind_label(c,func(l: Label) -> void: l.text = "Rifornimento in corso  ·  %s" % _time(float(p.remaining)),14,GOLD)
-			var bar: ProgressBar = _progress(GOLD)
-			c.add_child(bar)
-			bindings.append([bar,func(v: ProgressBar) -> void: v.value = (1.0-float(p.remaining)/maxf(float(p.duration),1.0))*100])
-		elif status == "ready":
-			c.add_child(_copy("Preparazione completata. Riempi gli scaffali per avviare le vendite automatiche.",14,SAGE))
-			c.add_child(_button("Riempi gli scaffali  →",_restock.bind(id,tier),true))
-		else:
-			var supply_cost: int = int(p.get("supply_cost",0))
-			var price: String = "%.0f monete" % float(p.cost)
-			if supply_cost>0:
-				price += " + %d provviste" % supply_cost
-			c.add_child(_copy("Scaffali vuoti  ·  %s di preparazione  ·  %s" % [_time(float(p.duration)),price],14))
-			var btn: Button = _button("Avvia rifornimento  ·  "+price,_restock.bind(id,tier),true)
-			btn.disabled = Game.coins<float(p.cost) or Game.supplies<supply_cost
-			c.add_child(btn)
-	col.add_child(_copy("Il lavoro ideale aumenta lo stock. Le affinità riducono tempi e costi di rifornimento.",12))
+	CozyPanel.building(self,id)
 
 func _skill_name(kind: String) -> String:
 	var skill: String = str(Game.BUILDING_SKILLS.get(kind,"services"))
@@ -1669,13 +1589,14 @@ func _show_building_help(id: int) -> void:
 	if b.is_empty(): return
 	var guides: Dictionary = {
 		"residence": ["home","Un letto per ricominciare","Ogni casa aggiunge 5 posti al rifugio. Se non ci sono letti liberi, non puoi accogliere altre persone al cancello.","Le case non richiedono lavoratori e non producono merci. Controlla i posti occupati nel dialogo della casa oppure in alto nello schermo."],
-		"cafe": ["coffee","Metti in moto il tuo primo negozio","Il caffè prepara bevande, biscotti e colazioni. L'affinità CIBO dei lavoratori rende i rifornimenti più rapidi ed economici.","Assegna da 1 a 3 cittadini: ogni lavoratore sblocca un prodotto. Paga Avvia rifornimento, attendi la preparazione e premi Riempi gli scaffali. Da quel momento le vendite generano monete automaticamente."],
-		"garden": ["heart","Un orto che fa crescere il rifugio","L'orto vende pomodori, verdure e prodotti della dispensa. L'affinità CIBO aiuta a ridurre tempi e costi del rifornimento.","Assegna da 1 a 3 lavoratori, avvia un rifornimento e riempi gli scaffali quando è pronto. Le vendite portano monete. Chi sogna di lavorare nell'orto aumenta lo stock disponibile."],
-		"workshop": ["build","Dal recupero a qualcosa di utile","L'officina prepara ricambi, attrezzi e kit di riparazione da vendere. L'affinità BENI dei lavoratori riduce tempi e costi di preparazione.","Ogni lavoratore sblocca un livello di prodotti, fino a 3. Avvia il rifornimento e, quando è pronto, riempi gli scaffali per cominciare a guadagnare monete. Il lavoro dei sogni dà un bonus allo stock."],
+		"cafe": ["coffee","Metti in moto il tuo primo negozio","Il caffè prepara bevande, biscotti e colazioni. L'affinità CIBO dei lavoratori rende i rifornimenti più rapidi.","Assegna da 1 a 3 cittadini: ogni lavoratore sblocca un prodotto. Paga Avvia rifornimento, attendi la preparazione e premi Riempi gli scaffali. Da quel momento le vendite generano monete automaticamente."],
+		"garden": ["heart","Un orto che fa crescere il rifugio","L'orto vende pomodori, verdure e prodotti della dispensa. L'affinità CIBO aiuta a ridurre i tempi del rifornimento.","Assegna da 1 a 3 lavoratori, avvia un rifornimento e riempi gli scaffali quando è pronto. Le vendite portano monete. Chi sogna di lavorare nell'orto aumenta lo stock disponibile."],
+		"workshop": ["build","Dal recupero a qualcosa di utile","L'officina prepara ricambi, attrezzi e kit di riparazione da vendere. L'affinità BENI dei lavoratori riduce i tempi di preparazione.","Ogni lavoratore sblocca un livello di prodotti, fino a 3. Avvia il rifornimento e, quando è pronto, riempi gli scaffali per cominciare a guadagnare monete. Il lavoro dei sogni dà un bonus allo stock."],
 		"clinic": ["shield","Un servizio per la nuova comunità","Il pronto soccorso prepara bende, kit e medicinali da vendere. L'affinità SERVIZI rende i rifornimenti più efficienti.","Assegna fino a 3 cittadini, avvia la preparazione e riempi gli scaffali al termine: le vendite generano monete. Per curare un cittadino ferito, apri Cittadini e usa Cura: costa 5 provviste."]
 	}
 	var guide: Array = guides.get(str(b.type),["build","Un nuovo negozio per la comunità",str(Game.BUILDING_DESCRIPTIONS.get(str(b.type),"Un'attività per vendere merci nel rifugio.")),"Assegna da 1 a 3 lavoratori, rifornisci i prodotti sbloccati e riempi gli scaffali. Le vendite generano monete automaticamente. L'affinità %s riduce tempi e costi; il lavoro dei sogni aumenta lo stock." % _skill_name(str(b.type))])
 	var col: VBoxContainer = _open("building_help",b.name,"A COSA SERVE QUESTO EDIFICIO",id)
+	col.add_child(_copy(CozyRules.role(Game,str(b.type)),20,SAGE))
 	var card: VBoxContainer = _card(col,SAGE)
 	var row: HBoxContainer = _hbox(16)
 	if str(b.type)=="residence":
@@ -1695,7 +1616,7 @@ func _show_assignment(bid: int) -> void:
 		return
 	if b.is_empty(): return
 	var col: VBoxContainer = _open("assignment","La squadra del negozio",b.name.to_upper(),bid)
-	col.add_child(_copy("Scegli fino a 3 lavoratori. Per questo negozio conta l'affinità %s: riduce il costo e il tempo dei rifornimenti." % _skill_name(str(b.type))))
+	col.add_child(_copy("Scegli fino a 3 lavoratori. Per questo negozio conta l'affinità %s: riduce il tempo dei rifornimenti." % _skill_name(str(b.type))))
 	for c in Game.citizens:
 		var card: VBoxContainer = _card(col,SAGE if c.dream==b.type else BORDER)
 		_citizen_header(card,c)
@@ -1720,13 +1641,7 @@ func _citizen_header(parent: Node, c: Dictionary) -> void:
 	info.add_child(_label(_work_name(c),14,MUTED))
 	info.add_child(_label("Sogno: %s" % _type_name(c.get("dream","cafe")),13,GOLD))
 	row.add_child(info)
-	if DeviceLayout.android_phone():
-		parent.add_child(_copy("Cibo %d · Beni %d · Servizi %d · Salute %d%%" % [int(c.get("food",1)),int(c.get("goods",1)),int(c.get("services",1)),int(c.get("hp",100))],22,SAGE))
-		return
-	var stats: VBoxContainer = _vbox(2)
-	stats.add_child(_label("Cibo %d   ·   Beni %d   ·   Servizi %d" % [int(c.get("food",1)),int(c.get("goods",1)),int(c.get("services",1))],13,SAGE,true))
-	stats.add_child(_label("Salute %d   ·   Felicità %d%%" % [int(c.get("hp",100)),int(c.get("happiness",75))],13,MUTED))
-	row.add_child(stats)
+	parent.add_child(_copy("Cibo %d · Beni %d · Servizi %d · Salute %d%%" % [int(c.get("food",1)),int(c.get("goods",1)),int(c.get("services",1)),int(c.get("hp",100))],18,SAGE))
 
 func _portrait(c: Dictionary, dimensions: Vector2) -> PanelContainer:
 	var avatar: PanelContainer = PanelContainer.new()
@@ -1746,16 +1661,22 @@ func _portrait(c: Dictionary, dimensions: Vector2) -> PanelContainer:
 func _show_citizens() -> void:
 	set_selected_tab("citizens")
 	var col: VBoxContainer = _open("citizens","Un rifugio fatto di persone","POPOLAZIONE  /  %d DI %d POSTI" % [Game.citizens.size(),Game.capacity()])
-	col.add_child(_copy("Assegna un lavoro ai cittadini e prepara il loro equipaggiamento per le spedizioni."))
+	col.add_child(_copy("%d abitanti · %d letti liberi · vendite +%d%% grazie alla comunità." % [Game.citizens.size(),maxi(0,Game.capacity()-Game.citizens.size()),roundi((Game.community_income_bonus()-1.0)*100)],18,SAGE))
+	var citizen_grid: GridContainer = GridContainer.new()
+	citizen_grid.columns = 2
+	citizen_grid.set_meta("phone_grid",true)
+	citizen_grid.add_theme_constant_override("h_separation",16)
+	citizen_grid.add_theme_constant_override("v_separation",16)
+	col.add_child(citizen_grid)
 	for c in Game.citizens:
-		var card: VBoxContainer = _card(col)
+		var card: VBoxContainer = _card(citizen_grid)
 		_citizen_header(card,c)
 		var actions: HBoxContainer = _hbox(8)
 		var work: Button = _button("Assegna lavoro",_show_job_select.bind(int(c.id)),false,true)
 		work.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		work.disabled = c.get("away",false)
 		actions.add_child(work)
-		var gear: Button = _button("Equipaggiamento  →",_show_citizen_equipment.bind(int(c.id)),false,true)
+		var gear: Button = _button("Arma e munizioni",_show_citizen_equipment.bind(int(c.id)),false,true)
 		gear.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		gear.disabled = c.get("away",false)
 		actions.add_child(gear)
@@ -1766,8 +1687,8 @@ func _show_citizens() -> void:
 		gear_row.add_child(_label(str(Game.WEAPONS.get(weapon_key,Game.WEAPONS.pistol).name),15,SAGE,true))
 		gear_row.add_child(_spacer())
 		if int(c.get("hp",100))<100:
-			var heal: Button = _button("Cura  ·  5 provviste",_heal.bind(int(c.id)),false,true)
-			heal.disabled = c.get("away",false) or Game.supplies<5
+			var heal: Button = _button("Cura · %d provviste" % Game.healing_cost(),_heal.bind(int(c.id)),false,true)
+			heal.disabled = c.get("away",false) or Game.supplies<Game.healing_cost()
 			gear_row.add_child(heal)
 		card.add_child(gear_row)
 	if Game.citizens.is_empty():
@@ -1839,75 +1760,7 @@ func _build(kind: String) -> void:
 		_show_build()
 
 func show_visitor(id: int) -> void:
-	var v: Dictionary = _visitor(id)
-	if v.is_empty(): return
-	var c: Dictionary = v.citizen
-	var col: VBoxContainer = _open("visitor","Una seconda possibilità","CONTROLLO AL CANCELLO  /  SCHEDA DI AMMISSIONE",id)
-	var row: HBoxContainer = _hbox(24)
-	col.add_child(row)
-	var photograph: VBoxContainer = _vbox(6 if DeviceLayout.mobile else 10)
-	photograph.custom_minimum_size.x = 164 if DeviceLayout.mobile else 200
-	row.add_child(photograph)
-	photograph.add_child(_portrait(c,Vector2(164,194) if DeviceLayout.mobile else Vector2(200,242)))
-	var photo_caption: Label = _label("AL CANCELLO" if DeviceLayout.mobile else "IN ATTESA AL CANCELLO",13,SAGE,true)
-	photo_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	photograph.add_child(photo_caption)
-	var detail: VBoxContainer = _vbox(6 if DeviceLayout.mobile else 12)
-	detail.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(detail)
-	_citizen_name(detail,c,24 if DeviceLayout.mobile else 30)
-	if not DeviceLayout.mobile: detail.add_child(_copy("«Cerco un posto sicuro. Posso dare una mano.»",17,MUTED))
-	var talents: HBoxContainer = _hbox(10)
-	detail.add_child(talents)
-	for talent: Array in [["coffee","CIBO","food"],["build","BENI","goods"],["heart","SERVIZI","services"]]:
-		var stat: PanelContainer = PanelContainer.new()
-		stat.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		stat.add_theme_stylebox_override("panel",_style(CARD,BORDER,12,8))
-		var info: VBoxContainer = _vbox(1)
-		info.alignment = BoxContainer.ALIGNMENT_CENTER
-		var value: HBoxContainer = _hbox(6)
-		value.alignment = BoxContainer.ALIGNMENT_CENTER
-		value.add_child(_icon(talent[0],28))
-		var amount: Label = _label(str(int(c.get(talent[2],1))),27,SAGE,true)
-		amount.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		value.add_child(amount)
-		info.add_child(value)
-		var caption: Label = _label(talent[1],12,MUTED,true)
-		caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		info.add_child(caption)
-		stat.add_child(info)
-		talents.add_child(stat)
-	detail.add_child(_copy("Lavoro dei sogni: %s" % _type_name(c.get("dream","cafe")),15,GOLD))
-	detail.add_child(_copy(c.get("quirk","Ha ancora voglia di ricominciare."),14,MUTED))
-	# Report visible clues, never the simulation's hidden infection flag.
-	var appearance: String = str(c.get("appearance","clean"))
-	var marked: bool = appearance!="clean"
-	var clue: String = "Ha bisogno di riposo. Il primo sguardo non basta a raccontare tutto il viaggio."
-	if appearance=="dirty": clue = "Polvere e macchie sui vestiti. Un viaggio difficile può lasciare il segno: osserva con attenzione."
-	elif marked: clue = "Un colorito insolito e qualche segno sul viso. Stanchezza, sporco o qualcosa di più? La decisione è tua."
-	if not DeviceLayout.mobile:
-		var observation: VBoxContainer = _card(col,GOLD)
-		var observation_row: HBoxContainer = _hbox(10)
-		observation_row.add_child(_icon("help",36))
-		observation_row.add_child(_copy(clue,16,GOLD))
-		observation.add_child(observation_row)
-		observation.add_child(_copy("Sporco e stanchezza possono somigliare al contagio. Osserva i segni prima di decidere.",14))
-	var decisions: VBoxContainer = _fixed_actions()
-	var beds: int = maxi(0,Game.capacity()-Game.citizens.size())
-	decisions.add_child(_copy("Letti liberi: %d · %s" % [beds,clue] if DeviceLayout.mobile else "Letti liberi: %d · Ogni persona accolta può lavorare o partire in spedizione." % beds,14,GOLD if DeviceLayout.mobile else MUTED))
-	var actions: HBoxContainer = _hbox()
-	var accept: Button = _button("✓  Accogli nel rifugio",_accept_visitor.bind(id),true)
-	accept.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	accept.disabled = Game.citizens.size()>=Game.capacity()
-	actions.add_child(accept)
-	var reject: Button = _button("Rifiuta l'ingresso",_reject_visitor.bind(id),false)
-	reject.add_theme_stylebox_override("normal",_raised(Color("efd2bd"),Color("b97c5d")))
-	reject.add_theme_stylebox_override("hover",_raised(Color("f8dfcc"),RED))
-	reject.add_theme_color_override("font_color",Color("8d4937"))
-	reject.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	actions.add_child(reject)
-	decisions.add_child(actions)
+	CozyPanel.visitor(self,id)
 
 func _accept_visitor(id: int) -> void:
 	if Game.accept_visitor(id):
@@ -1994,6 +1847,11 @@ func show_gate() -> void:
 	col.add_child(_label("Torretta presidiata  ·  %d zombie fuori dalle mura" % Game.threats.size(),17,TEXT,true))
 	col.add_child(_copy("Il militare sulla torretta spara al tuo comando: tocca uno zombie. Per il mitragliatore puoi tenere premuto. I cittadini possono dedicarsi al lavoro e alle spedizioni.",14))
 	col.add_child(_button("Scegli un'arma",_show_armory,false,true))
+	var material_repair: Button = _button("Ripara con 2 materiali",_cozy_action.bind("repair_parts",-1),false,true)
+	material_repair.name = "RepairWithMaterials"
+	bindings.append([material_repair,func(button: Button) -> void: button.disabled = Game.community.parts<2 or Game.gate_hp>=Game.gate_max])
+	col.add_child(material_repair)
+	col.add_child(_copy("Gli attacchi si fermano mentre leggi i menu. Una breccia richiede al massimo 50 monete e 2 provviste: abitanti ed edifici restano al sicuro.",17,SAGE))
 	_fixed_actions().add_child(_button("Al cancello. Si difende casa.  →",_gate_focus,true))
 
 func _update_gate_action(button: Button, upgrade: bool) -> void:
@@ -2010,22 +1868,7 @@ func _upgrade() -> void:
 	show_gate()
 
 func _show_quests() -> void:
-	var col: VBoxContainer = _open("quests","Piccoli passi, grandi speranze","DIARIO DEL RIFUGIO")
-	col.add_child(_copy("Le cose da fare non finiscono mai. Almeno queste hanno una ricompensa."))
-	for i in range(Game.quests.size()):
-		var q: Dictionary = Game.quests[i]
-		var claimed: bool = q.get("claimed",false)
-		var complete: bool = float(q.get("progress",0))>=float(q.get("target",1))
-		var card: VBoxContainer = _card(col,SAGE if complete and not claimed else BORDER)
-		_title_row(card,q.get("name","Obiettivo"),"COMPLETATO" if claimed else "%d / %d" % [mini(int(q.get("progress",0)),int(q.get("target",1))),int(q.get("target",1))],SAGE if complete else GOLD)
-		card.add_child(_copy(q.get("description","Aiuta il tuo rifugio a crescere."),14))
-		var bar: ProgressBar = _progress(SAGE if complete else GOLD,6)
-		bar.value=minf(float(q.get("progress",0))/maxf(float(q.get("target",1)),1)*100,100)
-		card.add_child(bar)
-		if not claimed:
-			var b: Button = _button("Ritira  ·  %d monete + %d banconote" % [int(q.get("reward",0)),int(q.get("reward_gems",0))],_claim_quest.bind(i),complete,true)
-			b.disabled = not complete
-			card.add_child(b)
+	CozyPanel.journal(self)
 
 func _claim_quest(index: int) -> void:
 	Game.claim_quest(index)
@@ -2040,7 +1883,8 @@ func show_help() -> void:
 		["04","Trova il talento giusto","Ogni cittadino ha affinità e un lavoro ideale. Un sognatore al posto giusto aumenta lo stock del negozio. I cittadini lavorano o partono in spedizione; il militare presidia sempre la torretta."],
 		["05","Guarda oltre le mura","Le spedizioni recuperano monete, provviste e colpi per la torretta. Esamina una destinazione per confrontare costo, ambiente, tempo e bottino; poi scegli da 1 a 3 cittadini. Alla partenza paghi provviste e consumi i colpi personali indicati. Tutti tornano, ma possono perdere salute e riportare meno risorse."],
 		["06","Una persona, la sua arma","Da Arma e munizioni compri una copia per quel cittadino, con la prima scorta inclusa. Il pompa aiuta negli spazi stretti, la precisione negli spazi aperti e il mitragliatore nelle zone affollate. La pistola è gratuita e ha colpi infiniti. Le scorte personali si comprano separatamente da quelle della torretta; la squadra mostra consumo e probabilità prima della partenza."],
-		["07","Torna quando vuoi","Il gioco salva automaticamente. I negozi maturano vendite anche mentre sei via, fino a 8 ore. Trascina per esplorare; usa i pulsanti + / – per lo zoom e le frecce per spostare la visuale."]
+		["07","Il tuo ritmo","Nei menu gli zombie aspettano mentre produzioni e viaggi proseguono. Orto e officina preparano risorse per il rifugio. I servizi attivi richiedono un lavoratore presente. Dal diario segui quattro capitoli, scopri progetti in ogni destinazione e avvia scambi con i vicini. Puoi osservare gratuitamente una persona dubbia prima di accoglierla."],
+		["08","Torna quando vuoi","Il gioco salva automaticamente. I negozi maturano vendite anche mentre sei via, fino a 8 ore. Trascina per esplorare; usa i pulsanti + / – per lo zoom e le frecce per spostare la visuale."]
 	]
 	for step in steps:
 		var card: VBoxContainer = _card(col)
@@ -2072,7 +1916,7 @@ func show_main_menu() -> void:
 	menu_layer.add_child(background)
 	var shade: ColorRect = ColorRect.new()
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	shade.color = Color(.10,.20,.19,.63)
+	shade.color = Color(.10,.20,.19,.40)
 	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	menu_layer.add_child(shade)
 	if DeviceLayout.android_phone():
@@ -2360,34 +2204,7 @@ func _show_pause() -> void:
 		_pause_before_modal = Game.paused
 		_pause_owner = true
 	Game.paused = true
-	if DeviceLayout.android_phone():
-		PhonePages.pause_menu(self)
-		return
-	var col: VBoxContainer = _open("pause","Un momento di tranquillità.","RIFUGIO IN PAUSA")
-	var summary: HBoxContainer = _hbox(12)
-	summary.add_child(_label("Giorno %d   ·   %d abitanti" % [Game.day,Game.citizens.size()],18,TEXT,true))
-	summary.add_child(_spacer())
-	summary.add_child(_icon("coin",25))
-	summary.add_child(_label("%s monete" % _number(Game.coins),18,GOLD,true))
-	col.add_child(summary)
-	var resume: Button = _button("Riprendi la partita  →",_close_modal,true)
-	resume.custom_minimum_size.y = 64
-	if DeviceLayout.android_phone(): col.add_child(resume)
-	else: _fixed_actions().add_child(resume)
-	var actions: GridContainer = GridContainer.new()
-	actions.columns = 2
-	actions.add_theme_constant_override("h_separation",12)
-	actions.add_theme_constant_override("v_separation",10)
-	for entry: Array in [["Salva la partita",_save],["Impostazioni",_show_settings],["Come si gioca",show_help],["Crediti",_show_credits]]:
-		var action: Button = _button(entry[0],entry[1])
-		action.custom_minimum_size.y = 52
-		action.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		actions.add_child(action)
-	col.add_child(actions)
-	col.add_child(_button("Salva e torna al menu",_return_to_main_menu,false,true))
-	var saved: Label = _copy("Salvataggio automatico attivo",13,SAGE)
-	saved.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	col.add_child(saved)
+	CozyPanel.pause(self)
 
 func _resume_from_pause() -> void:
 	_pause_before_modal = false
@@ -2461,3 +2278,30 @@ func flash_damage() -> void:
 	var t: Tween = create_tween()
 	t.tween_property(damage_overlay,"color:a",0.0,.4)
 
+
+func _cozy_tab(scope: String, key: String) -> void:
+	if is_instance_valid(modal_scroll): modal_scroll.scroll_vertical = 0
+	if scope=="building":
+		building_tab = key
+		show_building(panel_id)
+	else:
+		journal_tab = key
+		_show_quests()
+
+func _cozy_ask(id: int, question: String) -> void:
+	CozyRules.ask(Game,id,question)
+	show_visitor(id)
+
+func _cozy_action(action: String, id: int=-1) -> void:
+	match action:
+		"service": CozyRules.service(Game,id)
+		"storage": CozyRules.upgrade(Game,id,false)
+		"auto": CozyRules.upgrade(Game,id,true)
+		"project": CozyRules.complete_project(Game)
+		"deliver": CozyRules.deliver(Game)
+		"observe": CozyRules.observe(Game,id)
+		"batch": Game.batch_production(id,false)
+		"expose": Game.batch_production(id,true)
+		"repair_parts": Game.repair_with_materials()
+	if panel_kind=="visitor": show_visitor(id)
+	else: _refresh_current()

@@ -103,7 +103,7 @@ func test_pacing() -> void:
 	model._tick_construction(float(sites[0].construction_duration),true)
 	expect(not model.is_under_construction(sites[0]) and model.is_under_construction(sites.back()),"Parallel sites keep independent timers")
 	for index: int in range(200): model.buildings.append(model._make_building("garden"))
-	expect(model.next_build_duration("clinic")==model.MAX_CONSTRUCTION_TIME,"Late-game durations have a finite six-hour limit")
+	expect(model.next_build_duration("clinic")==model.MAX_CONSTRUCTION_TIME,"Late-game durations have a finite half-hour cozy limit")
 func test_persistence() -> void:
 	fresh()
 	model.build("residence")
@@ -125,7 +125,7 @@ func test_persistence() -> void:
 	rollback.highest_timestamp = Time.get_unix_time_from_system()+600
 	write_save(rollback)
 	expect(model.load_game() and is_equal_approx(model.buildings[0].construction_remaining,remaining),"Clock rollback cannot finish construction early")
-	for values: Array in [[null,10],[-1,0],[10,11],[10,-1],[model.MAX_CONSTRUCTION_TIME+1,10]]:
+	for values: Array in [[null,10],[-1,0],[10,11],[10,-1],[21601,10]]:
 		var invalid: Dictionary = data.duplicate(true)
 		invalid.buildings[0].construction_duration = values[0]
 		invalid.buildings[0].construction_remaining = values[1]

@@ -113,7 +113,7 @@ func run() -> void:
 		scene.held_pointer = Vector2(scene._sx(float(enemy.x)),scene._ground()-32.0*scene.zoom)
 		scene._update_held_fire()
 	expect(game.ammo==ammo_before-5 and scene.shots.size()==shots_before+5,"holding SMG repeats actual damage, ammo and tracers at its cooldown")
-	expect(float(enemy.hp)==35.0,"five SMG rounds each deal their actual 38 damage")
+	expect(float(enemy.hp)==5.0,"five SMG rounds each deal their actual 44 damage")
 	await pointer(Vector2(50,50),false)
 	var released_ammo: int = game.ammo
 	game.advance(0.5)

@@ -72,6 +72,7 @@ var smg_held: bool = false
 var held_pointer: Vector2 = Vector2.ZERO
 var target_outlines: Dictionary = {}
 var building_feedback = BuildingFeedback.new()
+var community_radio: Texture2D = preload("res://assets/art/community-radio.png")
 var _world_pointer_active: bool = false
 var _building_hold: Dictionary = {}
 var _suppress_world_release: bool = false
@@ -945,6 +946,10 @@ func _draw_gate() -> void:
 		_draw_fitted(building_art[5],rect)
 	else:
 		draw_rect(rect,Color("697668"))
+	if Game.community.projects.has("radio"):
+		var radio_size: Vector2 = Vector2(65,56)*zoom*DeviceLayout.gate_scale()
+		var radio_pos: Vector2 = rect.position+rect.size*Vector2(0.59,0.19)
+		draw_texture_rect(community_radio,Rect2(radio_pos,radio_size),false)
 	var center: float = rect.get_center().x
 	if hover == "gate":
 		_text(Vector2(center,y+113*zoom),"GESTISCI DIFESE",14,GOLD,heading,true)
@@ -1204,7 +1209,7 @@ func _draw_visitor(visitor: Dictionary, departing: bool, queue_index: int=0) -> 
 		draw_set_transform(Vector2.ZERO)
 	_draw_person(look,0,x,ground+7.0,78*_actor_zoom(),bool(visitor.get("facing_left",departing)),true,float(gait.phase),false,float(gait.blend),str(visitor.citizen.get("appearance","clean")))
 	if (not departing and Game.visitor_at_gate(visitor)) or attacked:
-		var text: String = "AIUTO!" if attacked else "POSSO ENTRARE?"
+		var text: String = "MI RIPOSO" if str(visitor.get("observation",""))=="waiting" else "POSSO ENTRARE?"
 		# Queue slots are closer than a whole speech balloon. Separate their
 		# heights so a neighbour's request never hides a call for help.
 		var bubble_y: float = ground-(100.0+mini(queue_index,2)*34.0)*_actor_zoom()+sin(elapsed*2)*3

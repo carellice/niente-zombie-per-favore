@@ -20,17 +20,17 @@ static func _signed(amount: int) -> String:
 	return ("+" if amount>=0 else "")+str(amount)
 
 static func _difficulty(threat: int) -> String:
-	if threat<=25: return "Facile"
-	if threat<=40: return "Media"
-	if threat<=62: return "Alta"
-	if threat<=78: return "Molto alta"
-	return "Estrema"
+	if threat<=25: return "Passeggiata"
+	if threat<=40: return "Breve viaggio"
+	if threat<=62: return "Esplorazione"
+	if threat<=78: return "Avventura"
+	return "Lungo viaggio"
 
 static func _loot(ui: CanvasLayer, parent: Node, rewards: Dictionary, title: String) -> void:
 	var card: VBoxContainer = ui._card(parent,ui.SAGE)
 	_heading(ui,card,title)
 	var grid: GridContainer = _grid(card)
-	for entry: Array in [["coins","coin","monete"],["supplies","crate","provviste"],["ammo","ammo","colpi torretta"],["gems","bill","banconote"]]:
+	for entry: Array in [["parts","build","materiali"],["coins","coin","monete"],["supplies","crate","provviste"],["ammo","ammo","colpi torretta"],["gems","bill","banconote"]]:
 		var row: HBoxContainer = ui._hbox(10)
 		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(ui._weapon_icon("ammo",Vector2(36,34)) if entry[0]=="ammo" else ui._icon(entry[1],34))
@@ -91,8 +91,10 @@ static func _show_destinations(ui: CanvasLayer, col: VBoxContainer) -> void:
 		var panel: PanelContainer = card.get_parent()
 		panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		panel.custom_minimum_size.y = 286 if DeviceLayout.android_phone() else 248
+		card.add_child(ui._icon("compass",36))
 		var name: Label = _heading(ui,card,str(zone.name))
 		name.custom_minimum_size.y = 58
+		card.add_child(ui._copy(("Scoperta recuperata · " if Game.Cozy.found(Game,str(zone.id)) else "Da scoprire · ")+str(Game.Cozy.DISCOVERIES[zone.id][0]),18,ui.SAGE))
 		card.add_child(ui._copy("Tempo fuori: %s · Difficoltà: %s" % [ui._time(float(zone.duration)),_difficulty(int(zone.threat))],18,ui.SAGE))
 		card.add_child(ui._copy(str(Game.ExpeditionGear.TERRAINS[Game.ExpeditionGear.terrain(zone)]),18,ui.GOLD))
 		card.add_child(ui._copy("Bottino completo: %d monete e %d provviste, più munizioni e banconote." % [int(zone.coins),int(zone.supplies)],18))
@@ -109,6 +111,9 @@ static func _show_details(ui: CanvasLayer, col: VBoxContainer) -> void:
 	var zone: Dictionary = Game.zones[ui.selected_zone]
 	var preview: Dictionary = Game.expedition_preview(ui.selected_zone,[])
 	_heading(ui,col,str(zone.name))
+	var discovery: VBoxContainer = ui._card(col,ui.SAGE)
+	_heading(ui,discovery,str(Game.Cozy.DISCOVERIES[zone.id][0]))
+	discovery.add_child(ui._copy(str(Game.Cozy.DISCOVERIES[zone.id][1])+" Progetto garantito al primo rientro, anche con bottino ridotto.",18,ui.SAGE))
 	col.add_child(ui._copy(str(zone.description),18))
 	col.add_child(ui._copy("Ambiente: "+str(Game.ExpeditionGear.TERRAINS[preview.terrain])+". "+_recommended(str(preview.terrain)),19,ui.SAGE))
 	var facts: GridContainer = _grid(col)
@@ -275,7 +280,7 @@ static func _show_rewards(ui: CanvasLayer, col: VBoxContainer) -> void:
 		var citizen: Dictionary = Game.get_citizen(int(id))
 		if not citizen.is_empty():
 			col.add_child(ui._copy("%s · Salute %d%%" % [str(citizen.name),int(citizen.hp)],18,ui.GOLD if int(citizen.hp)<100 else ui.SAGE))
-	col.add_child(ui._copy("Se serve, cura i cittadini dalla pagina Cittadini: 5 provviste a persona. Il ritiro del bottino è gratuito.",18))
+	col.add_child(ui._copy("Se serve, cura i cittadini dalla pagina Cittadini. La clinica e il ricettario riducono il costo; ritirare il bottino è gratuito.",18))
 	var claim: Button = ui._button("Ritira tutto il bottino",ui._claim_expedition,true)
 	claim.name = "ClaimExpedition"
 	ui._fixed_actions().add_child(claim)

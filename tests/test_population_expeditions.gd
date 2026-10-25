@@ -113,8 +113,8 @@ func test_preview_and_departure() -> void:
 	var supply: int = model.supplies
 	var preview: Dictionary = model.expedition_preview(8,[id])
 	expect(preview.can_depart and preview.cost==28 and preview.duration==280,"Preview displays authoritative route cost and duration")
-	expect(preview.full_rewards=={"coins":980,"supplies":120,"gems":6,"ammo":48},"Full loot matches the route")
-	expect(preview.reduced_rewards=={"coins":392,"supplies":48,"gems":0,"ammo":19},"Difficult return gives 40 percent integer loot and no bills")
+	expect(preview.full_rewards=={"coins":980,"supplies":120,"gems":6,"ammo":48,"parts":4},"Full loot matches the route")
+	expect(preview.reduced_rewards=={"coins":392,"supplies":48,"gems":0,"ammo":19,"parts":2},"Difficult return gives 40 percent integer loot and no bills")
 	expect(preview.full_net_supplies==92 and preview.reduced_net_supplies==20,"Net supplies subtract the launch cost from both outcomes")
 	expect(model._rng.state==state and model.supplies==supply and not model.citizens[0].away,"Preview neither spends resources nor rolls the outcome")
 	model.citizens[0].hp = 100
@@ -140,7 +140,7 @@ func test_preview_and_departure() -> void:
 	expect(model.expedition.rewards==rewards,"Actual loot matches one of the two advertised outcomes")
 	model._tick_expedition(280)
 	expect(model.expedition.status=="ready" and model.present_population()==4,"The team returns and counts toward pressure even before claiming loot")
-	expect(model.citizens[0].hp==(92 if success else 75),"Actual health loss matches the description")
+	expect(model.citizens[0].hp==(100-model.expedition_damage(success)),"Actual health loss matches the description")
 	var coins: float = model.coins
 	expect(model.claim_expedition() and model.coins==coins+int(rewards.coins) and model.supplies==int(rewards.supplies),"Claim awards exactly the advertised loot without another fee")
 	expect(not model.claim_expedition(),"Loot cannot be claimed twice")

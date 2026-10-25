@@ -264,7 +264,7 @@ func _test_random_waves() -> void:
 			rose = rose or count > previous
 			fell = fell or count < previous
 		previous = count
-	expect(seen_counts.size() >= 5 and rose and fell, "Wave sizes vary upward and downward instead of escalating")
+	expect(seen_counts.size() >= 3 and rose and fell, "Wave sizes vary upward and downward instead of escalating")
 	expect(seen_kinds.has("walker") and seen_kinds.has("runner") and seen_kinds.has("brute"), "Random compositions include all zombie types")
 	model._rng.seed = 561
 	model.wave = 1
@@ -283,7 +283,7 @@ func _test_random_waves() -> void:
 	model._wave_pending_reward = true
 	model._tick_waves(0.1)
 	var rest = model.wave_clock
-	expect(rest >= 55.0 and rest <= 95.0, "Completion starts a 55–95 second rest")
+	expect(rest >= model.defense_profile().interval_min and rest <= model.defense_profile().interval_max, "Completion starts a rest inside the current cozy profile")
 	model._add_threat("walker", 0.0)
 	model._tick_waves(100.0)
 	expect(model.wave_clock == rest, "Rest clock does not run while a zombie remains")
@@ -334,7 +334,7 @@ func _test_endurance() -> void:
 				invariant_violation = true
 	model._is_loading = false
 	expect(not invariant_violation, "Two-hour session preserves all currency, health, ammo and stock invariants")
-	expect(model.wave >= 45 and model.wave <= 90, "More frequent random arrivals stay bounded over two hours")
+	expect(model.wave >= 25 and model.wave <= 60, "Cozy random arrivals stay bounded over two hours")
 	expect(model.day >= 40 and int(model.stats.kills) >= 70, "Two-hour session keeps days and manual combat progressing")
 	expect(int(model.stats.expeditions) >= 80, "Repeated expeditions remain claimable during new wave pacing")
 	expect(int(model.stats.restocked) >= 25 and float(model.stats.earned) > 1000.0, "Long-running production and commerce continue normally")
