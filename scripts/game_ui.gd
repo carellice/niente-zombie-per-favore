@@ -11,6 +11,7 @@ const PhonePages = preload("res://scripts/phone_pages.gd")
 const BuildPanel = preload("res://scripts/build_panel.gd")
 const ConstructionPanel = preload("res://scripts/construction_panel.gd")
 const CitizenEquipmentPanel = preload("res://scripts/citizen_equipment_panel.gd")
+const DemolitionPanel = preload("res://scripts/demolition_panel.gd")
 const SurvivorCatalog = preload("res://scripts/survivor_catalog.gd")
 const PURCHASE_PANELS = ["build","building","citizens","citizen_equipment","assignment","job_select","gate","armory","weapon_details","expeditions"]
 
@@ -1137,6 +1138,8 @@ func _update_hud() -> void:
 	elif panel_kind == "visitor":
 		if _visitor(panel_id).is_empty():
 			_close_missing_visitor.call_deferred(panel_id)
+	elif panel_kind=="demolition" and _building(panel_id).is_empty():
+		_close_missing_demolition.call_deferred(panel_id)
 	elif panel_kind == "expeditions":
 		var sig: String = str(Game.expedition.get("status","idle"))
 		if sig != _last_panel_signature:
@@ -1158,6 +1161,16 @@ func _close_missing_visitor(id: int) -> void:
 	# A queued loss/rejection must not close a different card opened meanwhile.
 	if panel_kind == "visitor" and panel_id == id and _visitor(id).is_empty():
 		_close_modal()
+
+func _close_missing_demolition(id: int) -> void:
+	if panel_kind=="demolition" and panel_id==id and _building(id).is_empty(): _close_modal()
+
+func show_demolition(id: int) -> void:
+	DemolitionPanel.show_panel(self,id)
+
+func _demolish_building(id: int) -> void:
+	if Game.demolish_building(id): _close_modal()
+	else: show_demolition(id)
 
 func _next_objective() -> String:
 	for q in Game.quests:
@@ -1314,7 +1327,7 @@ func _open(kind: String, title: String, subtitle: String = "DOSSIER DEL RIFUGIO"
 	stack.add_child(ribbon)
 	var header: HBoxContainer = _hbox(15)
 	ribbon.add_child(header)
-	var kind_icons: Dictionary = {"visitor":"person","building":"home","building_help":"help","citizens":"people","citizen_equipment":"gun","assignment":"people","job_select":"build","build":"build","expeditions":"compass","armory":"gun","weapon_details":"gun","gate":"shield","quests":"bill","help":"help","pause":"pause","settings":"sound","credits":"heart","reset":"home","tutorial_intro":"home"}
+	var kind_icons: Dictionary = {"visitor":"person","building":"home","building_help":"help","citizens":"people","citizen_equipment":"gun","assignment":"people","job_select":"build","build":"build","expeditions":"compass","armory":"gun","weapon_details":"gun","gate":"shield","demolition":"build","quests":"bill","help":"help","pause":"pause","settings":"sound","credits":"heart","reset":"home","tutorial_intro":"home"}
 	header.add_child(_icon(str(kind_icons.get(kind,"home")),38 if DeviceLayout.mobile else 58))
 	var titles: VBoxContainer = _vbox(2)
 	titles.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -1550,6 +1563,7 @@ func show_building(id: int) -> void:
 		return
 	var col: VBoxContainer = _open("building",b.name,"LOTTO %02d  /  %s" % [Game.buildings.find(b)+1,_type_name(b.type).to_upper()],id)
 	_last_panel_signature = _building_signature(b)
+	col.add_child(_copy("Tieni premuto sull'edificio o sulla sua insegna per aprire la demolizione.",14))
 	if Game.is_under_construction(b):
 		ConstructionPanel.show_site(self,col,b)
 		return
@@ -2022,7 +2036,7 @@ func show_help() -> void:
 	var steps: Array = [
 		["01","Difendi la porta","Tocca uno zombie: la guardia sulla torretta spara solo al tuo comando. La pistola ha munizioni infinite; le altre armi consumano scorte. Più persone sono presenti nel rifugio, più numerosi e frequenti diventano gli arrivi degli zombie. Le persone fuori dalle mura o in spedizione non contano."],
 		["02","Fai entrare la vita","Tocca i superstiti al cancello, controlla talenti e segni di contagio. Gli zombie li lasciano in pace. Chi viene rifiutato riparte a piedi. Le case aumentano i letti disponibili."],
-		["03","Rimetti in moto i negozi","Apri un edificio e assegna fino a 3 lavoratori. Avvia un rifornimento, attendi e tocca Riempi gli scaffali. Le vendite generano monete nel tempo."],
+		["03","Rimetti in moto i negozi","Apri un edificio e assegna fino a 3 lavoratori. Avvia un rifornimento, attendi e tocca Riempi gli scaffali. Le vendite generano monete nel tempo. Tieni premuto su un edificio o sulla sua insegna per aprire la conferma di demolizione."],
 		["04","Trova il talento giusto","Ogni cittadino ha affinità e un lavoro ideale. Un sognatore al posto giusto aumenta lo stock del negozio. I cittadini lavorano o partono in spedizione; il militare presidia sempre la torretta."],
 		["05","Guarda oltre le mura","Le spedizioni recuperano monete, provviste e colpi per la torretta. Esamina una destinazione per confrontare costo, ambiente, tempo e bottino; poi scegli da 1 a 3 cittadini. Alla partenza paghi provviste e consumi i colpi personali indicati. Tutti tornano, ma possono perdere salute e riportare meno risorse."],
 		["06","Una persona, la sua arma","Da Arma e munizioni compri una copia per quel cittadino, con la prima scorta inclusa. Il pompa aiuta negli spazi stretti, la precisione negli spazi aperti e il mitragliatore nelle zone affollate. La pistola è gratuita e ha colpi infiniti. Le scorte personali si comprano separatamente da quelle della torretta; la squadra mostra consumo e probabilità prima della partenza."],

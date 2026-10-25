@@ -19,6 +19,8 @@ const LOT_STEP = 330.0
 const EXPANSION_RECT = Rect2(20.0, -210.0, 240.0, 210.0)
 const CHECKPOINT_LEFT = 245.0
 const CHECKPOINT_HEIGHT = 510.0
+const BUILDING_HOLD_SECONDS = 0.65
+const BUILDING_HOLD_SLOP = 8.0
 const CREAM = Color("eee8d6")
 const GOLD = Color("efc46d")
 const SAGE = Color("a6bd95")
@@ -71,12 +73,15 @@ var held_pointer: Vector2 = Vector2.ZERO
 var target_outlines: Dictionary = {}
 var building_feedback = BuildingFeedback.new()
 var _world_pointer_active: bool = false
+var _building_hold: Dictionary = {}
+var _suppress_world_release: bool = false
+var _world_release_serial: int = 0
 
 func _ready() -> void:
 	_sync_device_layout()
 	DeviceLayout.changed.connect(_sync_device_layout)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	get_viewport().mouse_exited.connect(func(): _world_pointer_active = false; hover = "")
+	get_viewport().mouse_exited.connect(_on_pointer_exited)
 	for arg: String in OS.get_cmdline_user_args():
 		if arg == "--fresh-preview":
 			Game.save_path = "user://preview-save.json"
@@ -98,18 +103,22 @@ func _ready() -> void:
 	ui.focus_city.connect(focus_city)
 	ui.panel_changed.connect(func(opened: bool):
 		panel_open = opened
-		if opened: hover = ""
+		if opened:
+			hover = ""
+			_cancel_building_hold(true)
+			dragging = false
 	)
 	ui.sound_toggled.connect(func(enabled: bool): sound_enabled = enabled)
 	ui.zoom_requested.connect(_zoom_button)
 	ui.camera_pan.connect(_pan_button)
 	ui.game_started.connect(_on_game_started)
-	ui.main_menu_opened.connect(func(): in_main_menu = true; dragging = false; hover = ""; building_feedback.reset(); _clear_target_outlines())
+	ui.main_menu_opened.connect(_on_main_menu_opened)
 	Game.sfx.connect(_play_sound)
 	Game.shot_fired.connect(func(id: int, _damage: float): hit_flashes[id] = 0.16)
 	Game.guard_fired.connect(_on_guard_fired)
 	Game.reload_started.connect(_on_reload_started)
 	Game.building_completed.connect(func(id: int) -> void: building_feedback.click(id))
+	Game.building_demolished.connect(_on_building_demolished)
 	Game.visitor_lost.connect(_on_visitor_lost)
 	last_coins = Game.coins
 	last_gate_hp = Game.gate_hp
@@ -148,6 +157,9 @@ func _ready() -> void:
 	_report_world_view()
 
 func _on_game_started() -> void:
+	_cancel_building_hold(true)
+	dragging = false
+	touch_points.clear()
 	in_main_menu = false
 	Game.paused = false
 	shots.clear()
@@ -232,6 +244,7 @@ func _sheet(path: String, columns: int, rows: int) -> Array[Texture2D]:
 
 func _process(delta: float) -> void:
 	elapsed += delta
+	_update_building_hold(delta)
 	if not Game.paused:
 		actor_clock += delta
 		citizen_roaming.advance(Game.citizens,_roaming_width(),Game.CITIZEN_WALK_SPEED,delta)
@@ -398,6 +411,7 @@ func _clamp_zoom(value: float) -> float:
 	return clampf(value,_zoom_min(),_zoom_max())
 
 func _sync_device_layout() -> void:
+	_cancel_building_hold(true)
 	var phone: bool = DeviceLayout.android_phone()
 	var overview: float = _phone_overview_zoom() if phone else 0.0
 	if phone:
@@ -441,6 +455,7 @@ func _report_world_view() -> void:
 	Game.set_visitor_spacing(54.0*DeviceLayout.actor_scale())
 
 func _cancel_camera_transition() -> void:
+	_cancel_building_hold(true)
 	if not camera_transition.is_empty():
 		camera_transition.clear()
 		target_camera = camera_x
@@ -483,6 +498,8 @@ func _expansion_rect() -> Rect2:
 	return Rect2(Vector2(_sx(_expansion_x()),_ground())+EXPANSION_RECT.position*_building_zoom(),EXPANSION_RECT.size*_building_zoom())
 
 func focus_gate() -> void:
+	_cancel_building_hold(true)
+	dragging = false
 	camera_transition.clear()
 	target_camera = -420.0
 	target_zoom = _view_zoom(0.98)
@@ -504,6 +521,8 @@ func focus_defense() -> void:
 	queue_redraw()
 
 func focus_city() -> void:
+	_cancel_building_hold(true)
+	dragging = false
 	camera_transition.clear()
 	target_camera = 280.0
 	target_zoom = _view_zoom(0.98)
@@ -581,6 +600,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.button_index == MOUSE_BUTTON_LEFT and pos.y > 119.0 and pos.y < size.y - 152.0:
 			if event.pressed:
 				_cancel_camera_transition()
+				_suppress_world_release = false
 				var picked: Dictionary = _pick_actor(pos)
 				if Game.weapon=="smg" and not picked.is_empty() and str(picked.kind)=="enemy":
 					smg_held = true
@@ -592,8 +612,9 @@ func _unhandled_input(event: InputEvent) -> void:
 				drag_start = pos
 				drag_camera = target_camera
 				drag_distance = 0.0
+				_begin_building_hold(pos)
 			else:
-				if dragging and drag_distance < 12.0:
+				if not _suppress_world_release and dragging and drag_distance < 12.0:
 					_world_click(pos)
 				dragging = false
 	if event is InputEventMouseMotion:
@@ -616,8 +637,93 @@ func _input(event: InputEvent) -> void:
 	# routing as well. No weapon fires without a continuing player press.
 	if event is InputEventMouseButton and event.button_index==MOUSE_BUTTON_LEFT and not event.pressed:
 		smg_held = false
+		_cancel_building_hold()
+		if _suppress_world_release: dragging = false
+		_finish_world_release.call_deferred(_world_release_serial)
+	elif event is InputEventMouseButton and event.button_index==MOUSE_BUTTON_LEFT and event.pressed:
+		_world_release_serial += 1
+		_cancel_building_hold(true)
 	if event is InputEventScreenTouch and not event.pressed:
 		smg_held = false
+		touch_points.erase(event.index)
+		if touch_points.size()<2: pinch_distance = 0.0
+		_cancel_building_hold(event.canceled)
+		if event.canceled: dragging = false
+	elif event is InputEventScreenTouch and event.pressed and not _building_hold.is_empty() and not touch_points.has(event.index):
+		_cancel_building_hold(true)
+		dragging = false
+	if (event is InputEventMouseMotion or event is InputEventScreenDrag) and not _building_hold.is_empty():
+		if event.position.distance_to(_building_hold.origin)>BUILDING_HOLD_SLOP: _cancel_building_hold(true)
+
+func _finish_world_release(serial: int) -> void:
+	if serial!=_world_release_serial: return
+	dragging = false
+	_suppress_world_release = false
+	_cancel_building_hold()
+
+func _cancel_building_hold(suppress_release: bool=false) -> void:
+	_building_hold.clear()
+	if suppress_release: _suppress_world_release = true
+
+func _building_at(point: Vector2) -> int:
+	if not _pick_actor(point).is_empty() or _gate_rect().has_point(point): return -1
+	for building: Dictionary in Game.buildings:
+		var id: int = int(building.id)
+		if _building_rect(id).has_point(point) or _building_logo_rect(id).has_point(point): return id
+	return -1
+
+func _begin_building_hold(point: Vector2) -> void:
+	if touch_points.size()>1: return
+	var id: int = _building_at(point)
+	if id<0: return
+	# A held building should not drift away during camera easing.
+	target_camera = camera_x
+	target_zoom = zoom
+	drag_camera = camera_x
+	_building_hold = {"id":id,"origin":point,"elapsed":0.0}
+
+func _update_building_hold(delta: float) -> void:
+	if _building_hold.is_empty(): return
+	if in_main_menu or panel_open or not dragging or not _world_pointer_active or touch_points.size()>1 or _building_at(held_pointer)!=int(_building_hold.id):
+		_cancel_building_hold(true)
+		return
+	_building_hold.elapsed = float(_building_hold.elapsed)+delta
+	if float(_building_hold.elapsed)<BUILDING_HOLD_SECONDS: return
+	var id: int = int(_building_hold.id)
+	_cancel_building_hold(true)
+	dragging = false
+	building_feedback.click(id)
+	Game.sfx.emit("ui")
+	ui.show_demolition(id)
+
+func _draw_building_hold() -> void:
+	if _building_hold.is_empty() or float(_building_hold.elapsed)<0.12: return
+	var rect: Rect2 = _building_logo_rect(int(_building_hold.id))
+	var progress: float = clampf(float(_building_hold.elapsed)/BUILDING_HOLD_SECONDS,0.0,1.0)
+	draw_arc(rect.get_center(),rect.size.x*0.5+5.0,-PI*0.5,-PI*0.5+TAU*progress,36,GOLD,4.0,true)
+
+func _on_pointer_exited() -> void:
+	_world_pointer_active = false
+	hover = ""
+	_cancel_building_hold(true)
+	dragging = false
+
+func _on_main_menu_opened() -> void:
+	in_main_menu = true
+	_on_pointer_exited()
+	touch_points.clear()
+	building_feedback.reset()
+	_clear_target_outlines()
+
+func _on_building_demolished(_id: int) -> void:
+	_cancel_building_hold(true)
+	dragging = false
+	hover = ""
+	building_feedback.reset()
+	_cancel_camera_transition()
+	_limit_camera()
+	_report_world_view()
+	queue_redraw()
 
 func _update_building_feedback(delta: float) -> void:
 	var hovered_id: int = -1
@@ -759,6 +865,7 @@ func _draw() -> void:
 	_draw_expansion()
 	_draw_lights()
 	_draw_building_logos()
+	_draw_building_hold()
 	_draw_characters()
 	# The solid checkpoint occludes arrivals at the boundary. Guards stand above it.
 	_draw_gate()
@@ -1249,11 +1356,14 @@ func _play_sound(kind: String) -> void:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		_cancel_building_hold(true)
 		Game.save_game()
 		get_tree().quit()
-	elif what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+	elif what in [NOTIFICATION_APPLICATION_FOCUS_OUT,NOTIFICATION_APPLICATION_PAUSED]:
+		_cancel_building_hold(true)
 		smg_held = false
 		dragging = false
+		touch_points.clear()
 		_world_pointer_active = false
 		hover = ""
 

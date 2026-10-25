@@ -12,6 +12,7 @@ signal visitor_attacked(visitor_id: int, world_x: float, damage: float)
 signal visitor_lost(visitor_id: int, world_x: float, person_name: String)
 signal reload_started(weapon_key: String, duration: float)
 signal building_completed(building_id: int)
+signal building_demolished(building_id: int)
 
 const SAVE_VERSION = 2
 const OFFLINE_CAP = 28800.0
@@ -505,8 +506,11 @@ func next_build_duration(kind: String) -> float:
 		if kind=="residence" and not _has_building(kind): return 6.0
 		if kind=="cafe" and not _has_building(kind): return 10.0
 	# Pending lots count too: parallel starts never evade the progression curve.
-	var lots: float = float(buildings.size())
+	var lots: float = float(construction_count())
 	return minf(MAX_CONSTRUCTION_TIME,ceilf(float(ContentCatalog.BUILDING_TIMES[kind])*(1.0+0.28*lots+0.04*lots*lots)))
+
+func construction_count() -> int:
+	return maxi(buildings.size(),int(stats.get("construction_started",0)))
 
 func _tick_construction(delta: float, offline: bool=false) -> int:
 	if delta<=0.0: return 0
@@ -564,6 +568,7 @@ func build(kind: String) -> bool:
 		return false
 	var duration: float = next_build_duration(kind)
 	coins -= cost
+	stats["construction_started"] = construction_count()+1
 	var building = _make_building(kind)
 	building["construction_duration"] = duration
 	building["construction_remaining"] = duration
@@ -584,6 +589,47 @@ func get_building(building_id: int) -> Dictionary:
 		if int(building["id"]) == building_id:
 			return building
 	return {}
+
+func demolition_preview(building_id: int) -> Dictionary:
+	var building: Dictionary = get_building(building_id)
+	if building.is_empty(): return {"valid":false,"can_demolish":false,"reason":"Questo edificio non è più disponibile."}
+	var pending: bool = is_under_construction(building)
+	var beds: int = 5*int(building.level) if building.type=="residence" and not pending else 0
+	var workers: int = 0
+	for citizen: Dictionary in citizens:
+		if int(citizen.job)==building_id: workers += 1
+	var stock: int = 0
+	var ready: int = 0
+	var restocking: int = 0
+	for product: Dictionary in building.products:
+		stock += maxi(0,int(product.stock))
+		if product.status=="ready": ready += 1
+		if product.status=="restocking": restocking += 1
+	var remaining_beds: int = capacity()-beds
+	var reason: String = ""
+	if tutorial_active(): reason = "Completa o salta la guida iniziale prima di demolire."
+	elif beds>0 and remaining_beds<citizens.size(): reason = "Servono altri alloggi: resterebbero %d posti per %d abitanti, compresi quelli in spedizione." % [remaining_beds,citizens.size()]
+	return {"valid":true,"can_demolish":reason.is_empty(),"reason":reason,"name":str(building.name),"type":str(building.type),"pending":pending,
+		"workers":workers,"beds_lost":beds,"remaining_beds":remaining_beds,"stock":stock,"ready_batches":ready,"restocking":restocking}
+
+func demolish_building(building_id: int) -> bool:
+	var preview: Dictionary = demolition_preview(building_id)
+	if not preview.can_demolish:
+		toast.emit(str(preview.reason))
+		return false
+	# Keep historical construction pacing and diary rewards after removal.
+	stats["construction_started"] = construction_count()
+	for citizen: Dictionary in citizens:
+		if int(citizen.job)==building_id: citizen.job = -1
+	for index: int in range(buildings.size()):
+		if int(buildings[index].id)==building_id:
+			buildings.remove_at(index)
+			break
+	building_demolished.emit(building_id)
+	toast.emit(str(preview.name)+" demolito. I lavoratori restano nel rifugio.")
+	sfx.emit("build")
+	_commit()
+	return true
 
 func assign(citizen_id: int, building_id: int) -> bool:
 	var citizen = get_citizen(citizen_id)
@@ -1574,6 +1620,11 @@ func _normalize_personal_equipment(citizen: Dictionary) -> void:
 func _valid_save(data: Dictionary) -> bool:
 	if not data.get("citizens") is Array or not data.get("buildings") is Array:
 		return false
+	var history: Variant = data.get("stats",{})
+	if not history is Dictionary: return false
+	if history.has("construction_started"):
+		var started: Variant = history.construction_started
+		if not _finite_number(started) or float(started)<0.0 or float(started)!=floorf(float(started)): return false
 	for citizen in data["citizens"]:
 		if not _valid_citizen(citizen):
 			return false
