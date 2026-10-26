@@ -2114,6 +2114,9 @@ func _show_settings() -> void:
 	display.add_child(_copy("Regola la grandezza di testi, finestre e pulsanti.",14))
 	_settings_toggle(display,"Scuotimento della visuale","screen_shake",Preferences.screen_shake)
 	_settings_toggle(display,"Riduci le animazioni","reduced_motion",Preferences.reduced_motion)
+	if DisplayPerformance.android:
+		_settings_toggle(display,"Fluidità fino a 120 Hz","android_high_refresh",Preferences.android_high_refresh)
+		display.add_child(_copy("Sì: fino a 120 Hz · No: 60 Hz, meno consumi. La frequenza effettiva dipende dal dispositivo e dal risparmio energetico.",14))
 	if DeviceLayout.mobile:
 		display.add_child(_copy("Schermo intero automatico · interfaccia adattata al dispositivo",17,SAGE))
 	else:
@@ -2198,6 +2201,7 @@ func _settings_toggle(parent: Node, caption: String, key: String, current: bool)
 	row.add_child(_label(caption,17,TEXT,true))
 	row.add_child(_spacer())
 	var toggle: Button = _button("Sì" if current else "No",func() -> void: pass,false,true)
+	toggle.name = "Setting_"+key
 	toggle.custom_minimum_size.x = 95
 	toggle.toggle_mode = true
 	toggle.button_pressed = current

@@ -114,6 +114,7 @@ func run() -> void:
 		root.min_size = Vector2i.ZERO
 		root.size = profile[1]
 		layout.mobile = profile[2]
+		root.get_node("DisplayPerformance").android = profile[2]
 		layout.preview_android_shortest_dp = profile[3]
 		layout.preview_insets = Vector4(24,6,40,8) if profile[2] else Vector4.ZERO
 		preferences.apply_settings({"interface_size":"compact","sound_enabled":false,"screen_shake":false,"reduced_motion":false,"fullscreen":false},false)
@@ -195,6 +196,13 @@ func run() -> void:
 			if scale_name=="compact": await capture("PAUSA")
 			ui._show_settings()
 			await opened()
+			var refresh_option: Button = ui.modal.find_child("Setting_android_high_refresh",true,false)
+			expect(is_instance_valid(refresh_option)==bool(profile[2]),"120 Hz setting is offered only on Android")
+			if is_instance_valid(refresh_option):
+				await tap("Setting_android_high_refresh")
+				expect(not preferences.android_high_refresh and refresh_option.text=="No","Touch chooses 60 Hz")
+				await tap("Setting_android_high_refresh")
+				expect(preferences.android_high_refresh and refresh_option.text=="Sì","Touch restores 120 Hz")
 			if scale_name=="compact": await capture("IMPOSTAZIONI")
 			ui.show_gate()
 			await opened()

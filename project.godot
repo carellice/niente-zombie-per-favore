@@ -3,7 +3,7 @@ config_version=5
 
 [application]
 config/name="Niente Zombie Per Favore!"
-config/version="0.4.1.41"
+config/version="0.4.1.42"
 config/description="Un piccolo rifugio. Una grande voglia di ricominciare."
 run/main_scene="res://loading.tscn"
 config/features=PackedStringArray("4.5", "GL Compatibility")
@@ -16,6 +16,7 @@ boot_splash/use_filter=true
 [autoload]
 DeviceLayout="*res://scripts/device_layout.gd"
 Preferences="*res://scripts/preferences.gd"
+DisplayPerformance="*res://scripts/display_performance.gd"
 Game="*res://scripts/game_state.gd"
 
 [display]
