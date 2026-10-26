@@ -1,6 +1,7 @@
 extends RefCounted
 const Rules = preload("res://scripts/cozy_rules.gd")
 const Build = preload("res://scripts/build_panel.gd")
+const Observation = preload("res://scripts/visitor_observation.gd")
 
 static func heading(ui: CanvasLayer, parent: Node, title: String, text: String="") -> void:
 	var label: Label = ui._copy(title,25,ui.TEXT)
@@ -211,8 +212,13 @@ static func visitor(ui: CanvasLayer, id: int) -> void:
 	info.add_child(ui._copy(str(c.quirk),17))
 	row.add_child(info)
 	col.add_child(row)
-	var observation: VBoxContainer = ui._card(col,ui.SAGE)
-	var report: Label = ui._bind_label(observation,func(l: Label) -> void: l.text = Rules.visitor_report(v),19,ui.TEXT)
+	Observation.show_card(ui,col,v)
+	var observation: VBoxContainer = ui._card(col)
+	heading(ui,observation,"Indizi e domande")
+	var report: Label = ui._bind_label(observation,func(l: Label) -> void:
+		l.text = str(v.get("hint",""))
+		l.visible = v.get("observation","")!="done"
+	,18,ui.TEXT)
 	report.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var questions: HBoxContainer = ui._hbox(10)
 	observation.add_child(questions)
@@ -222,23 +228,17 @@ static func visitor(ui: CanvasLayer, id: int) -> void:
 		question.disabled = v.get("answers",{}).has(entry[0])
 		questions.add_child(question)
 	for answer: String in v.get("answers",{}).values(): observation.add_child(ui._copy(answer,18,ui.SAGE))
-	var observe: Button = ui._button("Osserva con calma · gratis",ui._cozy_action.bind("observe",id),false,true)
-	observe.name = "ObserveVisitor"
-	ui.bindings.append([observe,func(button: Button) -> void:
-		var busy: bool = false
-		for person: Dictionary in Game.visitors:
-			if person.get("observation","")=="waiting": busy = true
-		button.disabled = busy or v.get("observation","")=="done" or not Game.visitor_at_gate(v)
-	])
-	observation.add_child(observe)
-	observation.add_child(ui._copy("Un posto di osservazione all'esterno, per 60 secondi. Nessun letto occupato, nessuna scadenza per decidere.",16))
 	var decisions: HBoxContainer = ui._hbox(12)
 	col.add_child(ui._copy("Letti liberi: %d" % maxi(0,Game.capacity()-Game.citizens.size()),19,ui.SAGE))
 	col.add_child(decisions)
 	var accept: Button = ui._button("Accogli nel rifugio",ui._accept_visitor.bind(id),true)
 	accept.name = "AcceptVisitor"
 	accept.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	ui.bindings.append([accept,func(button: Button) -> void: button.disabled = Game.citizens.size()>=Game.capacity() or v.get("observation","")=="waiting" or (v.get("observation","")=="done" and v.suspicious)])
+	ui.bindings.append([accept,func(button: Button) -> void:
+		var status: String = str(v.get("observation",""))
+		button.disabled = Game.citizens.size()>=Game.capacity() or status=="waiting" or (status=="done" and v.suspicious)
+		button.text = "Attendi l'esito" if status=="waiting" else "Ingresso bloccato" if status=="done" and v.suspicious else "Accogli nel rifugio"
+	])
 	decisions.add_child(accept)
 	var reject: Button = ui._button("Accompagna verso l'uscita",ui._reject_visitor.bind(id),false)
 	reject.size_flags_horizontal = Control.SIZE_EXPAND_FILL

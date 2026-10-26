@@ -1729,6 +1729,7 @@ func _valid_save(data: Dictionary) -> bool:
 func _valid_optional_outside_fields(visitor: Dictionary) -> bool:
 	if str(visitor.get("observation","")) not in ["","waiting","done"]: return false
 	if not _finite_number(visitor.get("observation_remaining",0)) or float(visitor.get("observation_remaining",0))<0 or float(visitor.get("observation_remaining",0))>60: return false
+	if visitor.has("observation_duration") and (not _finite_number(visitor.observation_duration) or not float(visitor.observation_duration) in [30.0,60.0]): return false
 	if not visitor.get("answers",{}) is Dictionary: return false
 	for numeric_key in ["hit_flash"]:
 		if visitor.has(numeric_key) and not _finite_number(visitor[numeric_key]):

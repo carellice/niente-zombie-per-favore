@@ -43,6 +43,7 @@ func run() -> void:
 		expect(apk.file_exists("assets/scripts/"+script+".gdc"),"New UI controller shipped: "+script)
 	var journal_import: ConfigFile = ConfigFile.new()
 	expect(apk.file_exists("assets/scripts/resource_ui.gdc"),"Illustrated costs and resource legend shipped")
+	expect(apk.file_exists("assets/scripts/visitor_observation.gdc"),"Clear visitor observation and verdicts shipped")
 	for script: String in ["display_performance","android_frame_rate"]:
 		expect(apk.file_exists("assets/scripts/"+script+".gdc"),"Android display controller shipped: "+script)
 	var journal_loaded: bool = journal_import.parse(apk.read_file("assets/assets/art/journal.png.import").get_string_from_utf8())==OK

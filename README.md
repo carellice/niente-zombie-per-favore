@@ -2,7 +2,9 @@
 
 Un piccolo rifugio. Una grande voglia di ricominciare.
 
-Aggiornamento **0.4.1.44**: [meno scritte e costi illustrati](docs/INTERFACCIA_ICONE_0.4.1.44.md). Nei dialoghi trovi icone con quantità, pulsanti più compatti e una legenda apribile dal **?** vicino ai saldi. Restano le spiegazioni delle azioni e delle conseguenze.
+Aggiornamento **0.4.1.45**: [controllo del contagio più chiaro](docs/OSSERVAZIONE_0.4.1.45.md), con spiegazione del rischio, durata reale, conto alla rovescia ed esiti distinti nella scheda dei nuovi arrivati. Il **?** spiega quando e perché osservare.
+
+Le schermate mantengono [icone e quantità al posto delle scritte ripetute](docs/INTERFACCIA_ICONE_0.4.1.44.md), pulsanti compatti e legenda delle risorse.
 
 È presente il [supporto Android fino a 120 Hz](docs/ANDROID_120HZ_0.4.1.42.md), attivo di default. Puoi tornare a 60 Hz da **Impostazioni → Schermo → Fluidità fino a 120 Hz** per ridurre i consumi. Il display resta gestito da Android in base alle capacità del dispositivo e alle condizioni energetiche.
 

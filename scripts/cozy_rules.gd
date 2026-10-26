@@ -65,7 +65,7 @@ static func tick(game: Node, delta: float, offline: bool=false) -> void:
 			visitor.observation_remaining = maxf(0.0,float(visitor.get("observation_remaining",0))-delta)
 			if visitor.observation_remaining<=0:
 				visitor.observation = "done"
-				if not offline: game.toast.emit("Osservazione conclusa: puoi tornare al cancello con calma.")
+				if not offline: game.toast.emit("Controllo concluso: contagio confermato. Tieni chiuso l'ingresso." if visitor.suspicious else "Controllo concluso: nessun contagio. Puoi accogliere "+str(visitor.citizen.name)+".")
 
 static func service_preview(game: Node, id: int) -> Dictionary:
 	var b: Dictionary = game.get_building(id)
@@ -162,6 +162,9 @@ static func deliver(game: Node) -> bool:
 	game._commit()
 	return true
 
+static func observation_duration(game: Node) -> float:
+	return 30.0 if found(game,"lab") else 60.0
+
 static func observe(game: Node, id: int) -> bool:
 	var target: Dictionary = {}
 	for v: Dictionary in game.visitors:
@@ -169,8 +172,9 @@ static func observe(game: Node, id: int) -> bool:
 		if int(v.id)==id: target = v
 	if target.is_empty() or not game.visitor_at_gate(target) or target.get("observation","")=="done": return false
 	target.observation = "waiting"
-	target.observation_remaining = 30.0 if found(game,"lab") else 60.0
-	game.toast.emit("Un posto tranquillo all'esterno. L'osservazione è gratuita: puoi continuare a giocare.")
+	target.observation_duration = observation_duration(game)
+	target.observation_remaining = target.observation_duration
+	game.toast.emit("Controllo del contagio avviato: %d secondi, gratis. Puoi continuare a giocare." % int(target.observation_duration))
 	game._commit()
 	return true
 
