@@ -4,8 +4,11 @@ extends RefCounted
 static func _caption(key: String) -> String:
 	if Game.weapon==key: return "In uso"
 	if Game.owned_weapons.has(key): return "Equipaggia"
-	var cost: Dictionary = Game.WEAPONS[key]
-	return "Torretta · %d monete\n+ %d provviste" % [int(cost.cost),int(cost.supplies)]
+	return "Acquista"
+
+static func _costs(ui: CanvasLayer, key: String) -> Array:
+	if Game.owned_weapons.has(key): return []
+	return ui.ResourceUI.costs(int(Game.WEAPONS[key].cost),int(Game.WEAPONS[key].supplies))
 
 static func _available(key: String) -> bool:
 	var cost: Dictionary = Game.WEAPONS[key]
@@ -41,7 +44,7 @@ static func show_catalog(ui: CanvasLayer) -> void:
 		details.name = "WeaponDetails_"+key
 		details.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		actions.add_child(details)
-		var action: Button = ui._button(_caption(key),ui._equip.bind(key),Game.weapon!=key,true)
+		var action: Button = ui._cost_button(_caption(key),_costs(ui,key),ui._equip.bind(key),Game.weapon!=key,true)
 		action.name = "WeaponAction_"+key
 		action.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		action.disabled = not _available(key)
@@ -54,7 +57,7 @@ static func show_catalog(ui: CanvasLayer) -> void:
 	var caption: Label = ui._bind_label(row,func(l: Label) -> void: l.text = "Munizioni della torretta · %d colpi" % Game.ammo,20,ui.TEXT)
 	caption.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	caption.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	var buy: Button = ui._button("+30 colpi · 40 monete + 10 provviste",ui._ammo,true,true)
+	var buy: Button = ui._cost_button("+30 colpi",ui.ResourceUI.costs(40,10),ui._ammo,true,true)
 	buy.name = "BuyAmmo"
 	buy.disabled = Game.coins<40 or Game.supplies<10
 	ui.bindings.append([buy,func(b: Button) -> void: b.disabled = Game.coins<40 or Game.supplies<10])
@@ -79,7 +82,7 @@ static func show_details(ui: CanvasLayer, key: String) -> void:
 	var footer: VBoxContainer = ui._fixed_actions()
 	var actions: HBoxContainer = ui._hbox(12)
 	actions.add_child(ui._button("← Armeria",ui._return_to_armory,false,true))
-	var action: Button = ui._button(_caption(key),ui._equip_from_details.bind(key),true)
+	var action: Button = ui._cost_button(_caption(key),_costs(ui,key),ui._equip_from_details.bind(key),true)
 	action.name = "WeaponDetailsAction"
 	action.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	action.disabled = not _available(key)

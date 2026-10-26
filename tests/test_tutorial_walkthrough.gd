@@ -126,7 +126,7 @@ func run() -> void:
 		await finish(preferences)
 		return
 	expect(ui.panel_kind=="build","House guidance opens the actual construction catalog")
-	if not await press("Costruisci  ·  320 monete",ui.modal,true):
+	if not await press("Costruisci",ui.modal):
 		await finish(preferences)
 		return
 	expect(game.buildings.size()==1 and game.buildings[0].type=="residence" and game.capacity()==0,"House button starts construction before granting beds")
@@ -146,7 +146,7 @@ func run() -> void:
 	expect(game.citizens.size()==1 and game.visitors.is_empty(),"Admission transfers the actual visitor into the refuge")
 	await stage("build_cafe","Costruisci il caffè")
 	await press("Costruisci il caffè",ui.tutorial_panel)
-	if not await press("Costruisci  ·  420 monete",ui.modal,true):
+	if not await press("Costruisci",ui.modal):
 		await finish(preferences)
 		return
 	expect(game.buildings.size()==2 and game.buildings[1].type=="cafe","Café is constructed through its catalog button")
@@ -162,7 +162,7 @@ func run() -> void:
 	expect(game.buildings[1].workers==[game.citizens[0].id],"Assignment gives the café the actual accepted citizen")
 	await stage("restock","Avvia il primo rifornimento")
 	await press("Avvia il primo rifornimento",ui.tutorial_panel)
-	if not await press("Avvia rifornimento  ·  ",ui.modal,true):
+	if not await press("Avvia rifornimento",ui.modal):
 		await finish(preferences)
 		return
 	var product: Dictionary = game.buildings[1].products[0]

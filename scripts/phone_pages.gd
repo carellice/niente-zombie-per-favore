@@ -50,9 +50,6 @@ static func open_page(ui: CanvasLayer, kind: String, title: String, id: int, sav
 	var section: Control = ui._icon(str(ICONS.get(kind,"home")),40,ui.SAGE)
 	section.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	rail.add_child(section)
-	var calm: Label = ui._label("CON\nCALMA",13,ui.CREAM,true)
-	calm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	rail.add_child(calm)
 	var page_column: VBoxContainer = ui._vbox(8)
 	page_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	columns.add_child(page_column)
@@ -76,9 +73,6 @@ static func open_page(ui: CanvasLayer, kind: String, title: String, id: int, sav
 	ui._phone_page = page
 	var masthead: VBoxContainer = ui._vbox(2)
 	page.add_child(masthead)
-	var eyebrow: Label = ui._label("IL TUO RIFUGIO  /  "+str(TITLES.get(kind,title)).to_upper(),14,ui.GOLD,true)
-	eyebrow.set_meta("eyebrow",true)
-	masthead.add_child(eyebrow)
 	var heading: Label = ui._copy(str(TITLES.get(kind,title)),32,ui.TEXT)
 	heading.name = "PhonePageTitle"
 	heading.add_theme_font_override("font",ui.heading)

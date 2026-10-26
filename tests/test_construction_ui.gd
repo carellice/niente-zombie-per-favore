@@ -101,7 +101,7 @@ func run() -> void:
 			expect(ui.modal_content.find_child("BuildCount_residence",true,false).text=="Già costruiti: 1" and ui.modal_content.find_child("BuildCount_bakery",true,false).text=="Già costruiti: 0",label+": catalog counts existing buildings by type")
 			var cost: int = game.next_build_cost("bakery")
 			var duration: float = game.next_build_duration("bakery")
-			expect(button.text.contains(str(cost)+" monete") and button.text.contains(ui._time(duration)),label+": both price and duration are visible before purchase")
+			expect(button.get_meta("displayed_amounts",[])==[["coin",cost],["compass",ui._time(duration)]],label+": both illustrated price and duration are visible before purchase")
 			var money: float = game.coins
 			await tap(button)
 			var site: Dictionary = game.buildings.back()

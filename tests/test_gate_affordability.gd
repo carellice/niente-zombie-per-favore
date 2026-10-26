@@ -111,7 +111,7 @@ func run() -> void:
 			expect(pressed_count==1 and game.gate_level==level+1 and game.coins==0 and game.supplies==0,label+": exact-budget input upgrades once and charges the displayed cost")
 			upgrade = action("GateUpgrade")
 			var next_cost: Dictionary = game.gate_upgrade_cost()
-			expect(upgrade.disabled and upgrade.text.contains(str(next_cost.coins)+" monete") and upgrade.text.contains(str(next_cost.supplies)+" provviste"),label+": the next level shows its increased cost and is disabled")
+			expect(upgrade.disabled and upgrade.get_meta("displayed_amounts",[])==ui.ResourceUI.costs(int(next_cost.coins),int(next_cost.supplies)),label+": the next level shows its increased illustrated cost and is disabled")
 			game.gate_hp = game.gate_max-35
 			refresh()
 			var repair: Button = action("GateRepair")
@@ -124,7 +124,7 @@ func run() -> void:
 			game.gate_hp -= 35
 			refresh()
 			repair_cost = game.repair_cost()
-			expect(repair.disabled and repair.text.contains(str(repair_cost.coins)+" monete"),label+": new damage refreshes both the price and eligibility")
+			expect(repair.disabled and repair.get_meta("displayed_amounts",[])==ui.ResourceUI.costs(int(repair_cost.coins),int(repair_cost.supplies)),label+": new damage refreshes both the illustrated price and eligibility")
 			game.coins = repair_cost.coins
 			game.supplies = repair_cost.supplies-1
 			refresh()

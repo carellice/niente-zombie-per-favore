@@ -12,6 +12,13 @@ const OPTIONS = [
 	["tailor","BENI","Vestiti e zaini da vendere. Lavoratori con affinità BENI."]]
 static var _previews: Dictionary = {}
 
+static func summary(kind: String) -> String:
+	match kind:
+		"garden": return "Verdure da vendere e raccolti per la comunità."
+		"workshop": return "Merci da vendere e materiali di recupero."
+		"clinic": return "Cure meno costose e ferite da spedizione dimezzate."
+	return Game.Cozy.role(Game,kind)
+
 static func _count_text(kind: String) -> String:
 	var ready: int = 0
 	var pending: int = 0
@@ -43,7 +50,6 @@ static func show_catalog(ui: CanvasLayer) -> void:
 	ui.set_selected_tab("build")
 	var col: VBoxContainer = ui._open("build","Costruisci il rifugio","PIANO DI ESPANSIONE")
 	ui._last_panel_signature = ui._build_catalog_signature()
-	col.add_child(ui._copy("Scegli cosa serve alla comunità. Ogni bottega vende merci e dà un contributo diverso con un lavoratore presente.",18))
 	if Game.buildings.size()>=3:
 		ui.CozyPanel.heading(ui,col,"Le botteghe, insieme")
 		ui.CozyPanel.batch(ui,col)
@@ -85,7 +91,7 @@ static func show_catalog(ui: CanvasLayer) -> void:
 		count.name = "BuildCount_"+kind
 		card.add_child(count)
 		ui.bindings.append([count,func(label: Label) -> void: label.text = _count_text(kind)])
-		var description: Label = ui._copy(Game.Cozy.role(Game,kind),18)
+		var description: Label = ui._copy(summary(kind),18)
 		description.custom_minimum_size.y = 64 if DeviceLayout.android_phone() else 48
 		card.add_child(description)
 		var spacer: Control = Control.new()
@@ -93,10 +99,9 @@ static func show_catalog(ui: CanvasLayer) -> void:
 		spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		card.add_child(spacer)
 		var cost: int = Game.next_build_cost(kind)
-		var build: Button = ui._button("Costruisci  ·  %d monete\nTempo: %s" % [cost,ui._time(Game.next_build_duration(kind))],ui._build.bind(kind),true,true)
+		var build: Button = ui._cost_button("Costruisci",[["coin",cost],["compass",ui._time(Game.next_build_duration(kind))]],ui._build.bind(kind),true,true)
 		build.name = "BuildAction_"+kind
 		build.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		build.disabled = Game.coins<cost or (Game.tutorial_active() and not site.is_empty())
 		ui.bindings.append([build,func(button: Button) -> void: button.disabled = Game.coins<Game.next_build_cost(kind) or (Game.tutorial_active() and not Game.active_construction().is_empty())])
 		card.add_child(build)
-	col.add_child(ui._copy("Il costo mostrato è quello che paghi ora. I nuovi lotti diventano più costosi man mano che il rifugio cresce.",16))

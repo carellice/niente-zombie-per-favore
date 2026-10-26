@@ -18,7 +18,7 @@ static func show_panel(ui: CanvasLayer, id: int) -> void:
 	if citizen.is_empty(): return
 	var col: VBoxContainer = ui._open("citizen_equipment","Armi e munizioni personali",str(citizen.name).to_upper(),id)
 	ui._citizen_name(col,citizen)
-	col.add_child(ui._copy("Una copia e una scorta per questa persona. Acquistare equipaggia l’arma e include i primi colpi. La pistola resta sempre gratuita.",18))
+	col.add_child(ui._copy("Armi e scorte personali. I primi colpi sono inclusi; pistola sempre gratuita.",18))
 	if bool(citizen.get("away",false)):
 		col.add_child(ui._copy("In spedizione: potrai acquistare, rifornire o cambiare arma al rientro.",20,ui.GOLD))
 	var zone_index: int = ui.selected_zone if ui._equipment_from_expedition else -1
@@ -58,15 +58,15 @@ static func show_panel(ui: CanvasLayer, id: int) -> void:
 		card.add_child(actions)
 		var mode: String = "equip" if preview.owned else "buy"
 		var callback: Callable = ui._equip_citizen.bind(id,key) if preview.owned else ui._buy_citizen_weapon.bind(id,key)
-		var caption: String = ("In uso" if preview.equipped else "Equipaggia") if preview.owned else "Compra copia personale\n%d monete + %d provviste" % [int(definition.cost),int(definition.supplies)]
-		var action: Button = ui._button(caption,callback,not preview.equipped,true)
+		var caption: String = ("In uso" if preview.equipped else "Equipaggia") if preview.owned else "Acquista"
+		var action: Button = ui._cost_button(caption,[] if preview.owned else ui.ResourceUI.costs(int(definition.cost),int(definition.supplies)),callback,not preview.equipped,true)
 		action.name = ("PersonalEquip_" if preview.owned else "PersonalBuy_")+key
 		action.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_action(ui,action,id,key,mode)
 		ui.bindings.append([action,func(button: Button) -> void: _action(ui,button,id,key,mode)])
 		actions.add_child(action)
 		if preview.owned and key!="pistol":
-			var refill: Button = ui._button("+%d %s personali\n%d monete + %d provviste" % [int(definition.pack),definition.unit,int(definition.ammo_cost),int(definition.ammo_supplies)],ui._buy_citizen_ammo.bind(id,key),false,true)
+			var refill: Button = ui._cost_button("+%d %s" % [int(definition.pack),definition.unit],ui.ResourceUI.costs(int(definition.ammo_cost),int(definition.ammo_supplies)),ui._buy_citizen_ammo.bind(id,key),false,true)
 			refill.name = "PersonalAmmo_"+key
 			refill.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			_action(ui,refill,id,key,"ammo")

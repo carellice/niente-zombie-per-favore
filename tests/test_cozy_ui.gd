@@ -32,6 +32,12 @@ func opened() -> void:
 		expect(padding.get_theme_constant("margin_right")>=20 and padding.get_theme_constant("margin_left")>=20,"Both content gutters")
 	for button: Node in ui.modal.find_children("*","Button",true,false):
 		if layout.mobile: expect(button.size.y>=layout.TOUCH_TARGET-1,"Comfortable tap target: "+str(button.name))
+		if button.has_meta("cost_button"):
+			var content: Control = button.get_node("CostButtonContent")
+			expect(button.text.length()>0 and not button.text.contains("monete"),"Cost button keeps a short action caption")
+			for icon: Node in content.find_children("Amount_*","HBoxContainer",true,false):
+				var local: Transform2D = button.get_global_transform().affine_inverse()*icon.get_global_transform()
+				expect(Rect2(Vector2.ZERO,button.size).grow(2).encloses(local*Rect2(Vector2.ZERO,icon.size)),"Illustrated cost fits inside its button: "+str(button.name))
 func check_hud() -> void:
 	if not layout.android_phone(): return
 	var safe: Rect2 = layout.safe_rect().grow(2)

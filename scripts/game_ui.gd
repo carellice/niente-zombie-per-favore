@@ -7,6 +7,7 @@ const MobileHUD = preload("res://scripts/mobile_hud.gd")
 const Typography = preload("res://scripts/typography.gd")
 const ActorVisuals = preload("res://scripts/actor_visuals.gd")
 const HUDIcons = preload("res://scripts/hud_icons.gd")
+const ResourceUI = preload("res://scripts/resource_ui.gd")
 const WeaponIcon = preload("res://scripts/weapon_icon.gd")
 const ProductIcons = preload("res://scripts/product_icons.gd")
 const ExpeditionPanel = preload("res://scripts/expedition_panel.gd")
@@ -341,6 +342,17 @@ func _button(value: String, callback: Callable, primary: bool = false, small: bo
 		callback.call()
 	)
 	return b
+
+func _amounts(entries: Array, tint: Color=SAGE) -> HFlowContainer:
+	return ResourceUI.row(self,entries,tint)
+
+func _cost_button(caption: String, entries: Array, callback: Callable, primary: bool=false, small: bool=false) -> Button:
+	var button: Button = _button(caption,callback,primary,small)
+	ResourceUI.set_button(self,button,caption,entries,primary)
+	return button
+
+func _update_cost_button(button: Button, caption: String, entries: Array, primary: bool=true) -> void:
+	ResourceUI.set_button(self,button,caption,entries,primary)
 
 func _button_stack(button: Button, gap: int = 4, padding: Vector2 = Vector2(8,8)) -> VBoxContainer:
 	# Center the complete icon/text group within symmetric button margins.
@@ -1403,20 +1415,52 @@ func _fixed_actions() -> VBoxContainer:
 
 func _add_purchase_balances(parent: Node, kind: String) -> void:
 	if not PURCHASE_PANELS.has(kind) and kind!="quests": return
-	var row: HBoxContainer = _hbox(16)
+	var row: HFlowContainer = HFlowContainer.new()
+	row.add_theme_constant_override("h_separation",16)
+	row.add_theme_constant_override("v_separation",6)
 	row.name = "DialogBalances"
 	parent.add_child(row)
 	for entry: Array in [["coin","monete","coins","DialogCoins"],["crate","provviste","supplies","DialogSupplies"],["bill","banconote","gems","DialogBills"],["build","materiali","parts","DialogParts"]]:
 		var group: HBoxContainer = _hbox(6)
+		group.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		group.add_child(_icon(str(entry[0]),28))
 		var key: String = entry[2]
 		var label: Label = _label("",17,SAGE)
 		label.name = str(entry[3])
-		var update: Callable = func(l: Label) -> void: l.text = "%d %s" % [int(Game.community.parts) if key=="parts" else int(Game.get(key)),entry[1]]
+		group.tooltip_text = str(entry[1]).capitalize()
+		var update: Callable = func(l: Label) -> void: l.text = str(int(Game.community.parts) if key=="parts" else int(Game.get(key)))
 		update.call(label)
 		bindings.append([label,update])
 		group.add_child(label)
 		row.add_child(group)
+	var legend: VBoxContainer = _card(parent)
+	legend.get_parent().name = "ResourceLegend"
+	legend.add_child(_copy("Risorse del rifugio",20,TEXT))
+	for entry: Array in [["coin","Monete · acquisti e costruzioni"],["crate","Provviste · rifornimenti, cure e spedizioni"],["bill","Banconote · ricompense e azioni speciali"],["build","Materiali · migliorie e progetti"]]:
+		var meaning: HBoxContainer = _hbox(10)
+		meaning.add_child(_icon(str(entry[0]),28))
+		meaning.add_child(_copy(str(entry[1]),17))
+		legend.add_child(meaning)
+	legend.get_parent().hide()
+	var help: Button = _icon_button("help",_toggle_resource_legend.bind(legend.get_parent().get_instance_id()),"Significato delle risorse")
+	help.name = "ResourceLegendToggle"
+	row.add_child(help)
+
+func _toggle_resource_legend(instance_id: int) -> void:
+	if not is_instance_id_valid(instance_id) or not is_instance_valid(modal_content): return
+	var legend: Control = instance_from_id(instance_id)
+	if legend.visible:
+		legend.hide()
+		return
+	# Even tablet cabinets keep this optional text inside their scroll surface.
+	# Expanding a fixed header must never squeeze the usable content to zero.
+	if legend.get_parent()!=modal_content: legend.reparent(modal_content)
+	modal_content.move_child(legend,0)
+	legend.show()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if is_instance_valid(legend) and is_instance_valid(modal_scroll) and modal_scroll.is_ancestor_of(legend):
+		modal_scroll.ensure_control_visible(legend)
 
 func _citizen_name(parent: Node, citizen: Dictionary, font_size: int=24) -> void:
 	var row: HBoxContainer = _hbox(8)
@@ -1670,7 +1714,7 @@ func _citizen_header(parent: Node, c: Dictionary) -> void:
 	info.add_child(_label(_work_name(c),14,MUTED))
 	info.add_child(_label("Sogno: %s" % _type_name(c.get("dream","cafe")),13,GOLD))
 	row.add_child(info)
-	parent.add_child(_copy("Cibo %d · Beni %d · Servizi %d · Salute %d%%" % [int(c.get("food",1)),int(c.get("goods",1)),int(c.get("services",1)),int(c.get("hp",100))],18,SAGE))
+	parent.add_child(_amounts([["coffee",int(c.get("food",1))],["goods",int(c.get("goods",1))],["heart",int(c.get("services",1))],["health",str(int(c.get("hp",100)))+"% salute"]]))
 
 func _portrait(c: Dictionary, dimensions: Vector2) -> PanelContainer:
 	var avatar: PanelContainer = PanelContainer.new()
@@ -1716,7 +1760,7 @@ func _show_citizens() -> void:
 		gear_row.add_child(_label(str(Game.WEAPONS.get(weapon_key,Game.WEAPONS.pistol).name),15,SAGE,true))
 		gear_row.add_child(_spacer())
 		if int(c.get("hp",100))<100:
-			var heal: Button = _button("Cura · %d provviste" % Game.healing_cost(),_heal.bind(int(c.id)),false,true)
+			var heal: Button = _cost_button("Cura",ResourceUI.costs(0,Game.healing_cost()),_heal.bind(int(c.id)),false,true)
 			heal.disabled = c.get("away",false) or Game.supplies<Game.healing_cost()
 			gear_row.add_child(heal)
 		card.add_child(gear_row)
@@ -1876,7 +1920,7 @@ func show_gate() -> void:
 	col.add_child(_label("Torretta presidiata  ·  %d zombie fuori dalle mura" % Game.threats.size(),17,TEXT,true))
 	col.add_child(_copy("Il militare sulla torretta spara al tuo comando: tocca uno zombie. Per il mitragliatore puoi tenere premuto. I cittadini possono dedicarsi al lavoro e alle spedizioni.",14))
 	col.add_child(_button("Scegli un'arma",_show_armory,false,true))
-	var material_repair: Button = _button("Ripara con 2 materiali",_cozy_action.bind("repair_parts",-1),false,true)
+	var material_repair: Button = _cost_button("Ripara",ResourceUI.costs(0,0,2),_cozy_action.bind("repair_parts",-1),false,true)
 	material_repair.name = "RepairWithMaterials"
 	bindings.append([material_repair,func(button: Button) -> void: button.disabled = Game.community.parts<2 or Game.gate_hp>=Game.gate_max])
 	col.add_child(material_repair)
@@ -1885,7 +1929,7 @@ func show_gate() -> void:
 
 func _update_gate_action(button: Button, upgrade: bool) -> void:
 	var cost: Dictionary = Game.gate_upgrade_cost() if upgrade else Game.repair_cost()
-	button.text = ("Potenzia" if upgrade else "Ripara")+"\n%d monete + %d provviste" % [int(cost.coins),int(cost.supplies)]
+	_update_cost_button(button,"Potenzia" if upgrade else "Ripara",ResourceUI.costs(int(cost.coins),int(cost.supplies)),not upgrade)
 	button.disabled = not Game.can_upgrade_gate() if upgrade else (Game.gate_hp>=Game.gate_max-0.01 or Game.coins<int(cost.coins) or Game.supplies<int(cost.supplies))
 
 func _repair() -> void:

@@ -22,12 +22,12 @@ static func batch(ui: CanvasLayer, parent: Node, id: int=-1) -> void:
 	var quote: Dictionary = Game.batch_preview(id)
 	var row: HBoxContainer = ui._hbox(12)
 	parent.add_child(row)
-	var start: Button = ui._button("Avvia tutti · %d monete + %d provviste" % [quote.cost,quote.supplies],ui._cozy_action.bind("batch",id),true,true)
+	var start: Button = ui._cost_button("Avvia tutti",ui.ResourceUI.costs(int(quote.cost),int(quote.supplies)),ui._cozy_action.bind("batch",id),true,true)
 	start.name = "BatchStart"
 	start.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	ui.bindings.append([start,func(b: Button) -> void:
 		var q: Dictionary = Game.batch_preview(id)
-		b.text = "Avvia tutti · %d monete + %d provviste" % [q.cost,q.supplies]
+		ui._update_cost_button(b,"Avvia tutti",ui.ResourceUI.costs(int(q.cost),int(q.supplies)))
 		b.disabled = q.start==0 or Game.coins<int(q.cost) or Game.supplies<int(q.supplies)
 	])
 	row.add_child(start)
@@ -51,8 +51,8 @@ static func building(ui: CanvasLayer, id: int) -> void:
 	var intro: VBoxContainer = ui._vbox(5)
 	intro.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	hero.add_child(intro)
-	if DeviceLayout.android_phone(): intro.add_child(ui._copy(Rules.role(Game,str(b.type)),19,ui.SAGE))
-	else: heading(ui,intro,str(b.name),Rules.role(Game,str(b.type)))
+	if DeviceLayout.android_phone(): intro.add_child(ui._copy(Build.summary(str(b.type)),19,ui.SAGE))
+	else: heading(ui,intro,str(b.name),Build.summary(str(b.type)))
 	col.add_child(hero)
 	if b.type=="residence":
 		var home: VBoxContainer = ui._card(col,ui.SAGE)
@@ -82,7 +82,7 @@ static func production(ui: CanvasLayer, col: Node, b: Dictionary) -> void:
 		var info: VBoxContainer = ui._vbox(4)
 		info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		heading(ui,info,str(p.name))
-		info.add_child(ui._copy("%d monete base a pezzo · fino a %d pezzi" % [int(p.price),int(p.max_stock)],17,ui.SAGE))
+		info.add_child(ui._amounts([["coin",str(int(p.price))+" / pezzo"],["stock","×"+str(int(p.max_stock))]]))
 		product.add_child(info)
 		card.add_child(product)
 		if not unlocked and p.status=="empty":
@@ -97,27 +97,30 @@ static func production(ui: CanvasLayer, col: Node, b: Dictionary) -> void:
 		elif p.status=="ready":
 			card.add_child(ui._button("Riempi gli scaffali  →",ui._restock.bind(int(b.id),tier),true))
 		else:
-			var action: Button = ui._button("Avvia rifornimento  ·  %d monete%s" % [int(p.cost)," + %d provviste" % int(p.supply_cost) if int(p.supply_cost)>0 else ""],ui._restock.bind(int(b.id),tier),true)
+			var action: Button = ui._cost_button("Avvia rifornimento",ui.ResourceUI.costs(int(p.cost),int(p.supply_cost)),ui._restock.bind(int(b.id),tier),true)
 			ui.bindings.append([action,func(v: Button) -> void: v.disabled = Game.coins<int(p.cost) or Game.supplies<int(p.supply_cost) or Game._available_workers(b)<tier])
 			card.add_child(action)
 
 static func service(ui: CanvasLayer, col: Node, b: Dictionary) -> void:
 	var card: VBoxContainer = ui._card(col,ui.SAGE)
-	heading(ui,card,"Il suo contributo al rifugio",Rules.role(Game,str(b.type)))
-	card.add_child(ui._copy("Attivo con almeno un lavoratore presente. I bonus di più copie dello stesso edificio non si sommano.",17))
+	heading(ui,card,"Contributo",Build.summary(str(b.type)))
+	card.add_child(ui._copy("Richiede un lavoratore. I bonus dello stesso tipo non si sommano.",17))
 	var p: Dictionary = Rules.service_preview(Game,int(b.id))
 	if p.get("valid",false):
+		heading(ui,card,str(p.name))
+		card.add_child(ui._amounts([["crate" if b.type=="garden" else "build",int(p.amount)],["compass",ui._time(float(p.duration))]]))
 		var label: Label = ui._bind_label(card,func(l: Label) -> void:
 			var current: Dictionary = Rules.service_preview(Game,int(b.id))
-			l.text = "%s · %d %s\n%s" % [current.name,current.amount,current.unit,"Pronto da ritirare" if current.status=="ready" else "In preparazione · "+ui._time(current.remaining) if current.status=="working" else "Tempo: "+ui._time(current.duration)]
+			l.text = "Pronto da ritirare" if current.status=="ready" else "In preparazione · "+ui._time(current.remaining) if current.status=="working" else ""
+			l.visible = not l.text.is_empty()
 		,20,ui.SAGE)
 		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		var action: Button = ui._button("Ritira il contributo" if p.status=="ready" else "Prepara · %d monete" % p.cost,ui._cozy_action.bind("service",int(b.id)),true)
+		var action: Button = ui._cost_button("Ritira" if p.status=="ready" else "In preparazione" if p.status=="working" else "Prepara",ui.ResourceUI.costs(int(p.cost)) if p.status=="idle" else [],ui._cozy_action.bind("service",int(b.id)),true)
 		action.name = "VillageService"
 		ui.bindings.append([action,func(v: Button) -> void:
 			var current: Dictionary = Rules.service_preview(Game,int(b.id))
 			v.disabled = (not current.available and current.status!="ready") or current.status=="working" or (current.status=="idle" and Game.coins<int(current.cost))
-			v.text = "Ritira il contributo" if current.status=="ready" else "Prepara · %d monete" % current.cost
+			ui._update_cost_button(v,"Ritira" if current.status=="ready" else "In preparazione" if current.status=="working" else "Prepara",ui.ResourceUI.costs(int(current.cost)) if current.status=="idle" else [])
 		])
 		card.add_child(action)
 	else:
@@ -133,10 +136,9 @@ static func upgrades(ui: CanvasLayer, col: Node, b: Dictionary) -> void:
 		var cost: int = 500 if automatic else 350
 		var parts: int = 6 if automatic else 4
 		if not Rules.found(Game,source): card.add_child(ui._copy("Progetto da trovare: "+str(Game.zones[["minimarket","station","lab","allotments","pharmacy","depot"].find(source)].name),17,ui.GOLD))
-		var action: Button = ui._button("Già attivo" if b.get(key,false) else "Migliora · %d monete + %d materiali" % [cost,parts],ui._cozy_action.bind("auto" if automatic else "storage",int(b.id)),true)
+		var action: Button = ui._cost_button("Già attivo" if b.get(key,false) else "Migliora",[] if b.get(key,false) else ui.ResourceUI.costs(cost,0,parts),ui._cozy_action.bind("auto" if automatic else "storage",int(b.id)),true)
 		ui.bindings.append([action,func(v: Button) -> void: v.disabled = not Rules.found(Game,source) or b.get(key,false) or Game.coins<cost or int(Game.community.parts)<parts])
 		card.add_child(action)
-	col.add_child(ui._copy("Materiali disponibili: %d. Li recuperi in spedizione o li prepari nell'officina." % int(Game.community.parts),17,ui.SAGE))
 	col.add_child(ui._copy("Per demolire, chiudi la scheda e tieni premuto sull'edificio o sull'insegna.",16))
 
 static func journal(ui: CanvasLayer) -> void:
@@ -151,7 +153,7 @@ static func journal(ui: CanvasLayer) -> void:
 			var card: VBoxContainer = ui._card(col)
 			heading(ui,card,str(q.name),str(q.description))
 			card.add_child(ui._copy("%d / %d" % [int(q.progress),int(q.target)],18,ui.SAGE))
-			var action: Button = ui._button("Ritira · %d monete + %d banconote" % [int(q.reward),int(q.reward_gems)],ui._claim_quest.bind(i),true,true)
+			var action: Button = ui._cost_button("Ritira",ui.ResourceUI.costs(int(q.reward),0,0,int(q.reward_gems)),ui._claim_quest.bind(i),true,true)
 			action.disabled = int(q.progress)<int(q.target)
 			card.add_child(action)
 		return
@@ -168,8 +170,7 @@ static func journal(ui: CanvasLayer) -> void:
 	card.add_child(ui._painted_icon(load("res://assets/art/community-radio.png"),Vector2(150,112),"community_radio"))
 	if not p.complete:
 		heading(ui,card,"Capitolo %d · %s" % [int(p.index)+1,p.name],str(p.goal))
-		card.add_child(ui._copy("Nessuna scadenza. Il prossimo passo ti aspetta quando sei pronto.",17))
-		var action: Button = ui._button("Completa il progetto"+(" · %d monete + %d materiali" % [p.coins,p.parts] if int(p.coins)>0 else " · ricevi %d monete e %d materiali" % [p.reward,p.gift]),ui._cozy_action.bind("project",-1),true)
+		var action: Button = ui._cost_button("Completa il progetto" if int(p.coins)>0 else "Completa e ritira",ui.ResourceUI.costs(int(p.coins),0,int(p.parts)) if int(p.coins)>0 else ui.ResourceUI.costs(int(p.reward),0,int(p.gift)),ui._cozy_action.bind("project",-1),true)
 		action.name = "CommunityProject"
 		ui.bindings.append([action,func(v: Button) -> void:
 			var current: Dictionary = Rules.project_preview(Game)
@@ -185,11 +186,15 @@ static func journal(ui: CanvasLayer) -> void:
 	var request: Dictionary = Rules.request_preview(Game)
 	if request.unlocked:
 		var neighbors: VBoxContainer = ui._card(col,ui.GOLD)
-		heading(ui,neighbors,str(request.name),"Consegna %d %s · ricevi %d monete, %d provviste e %d materiali." % [request.amount,request.unit,request.coins,request.supplies,request.parts])
+		heading(ui,neighbors,str(request.name))
+		neighbors.add_child(ui._copy("Consegna",17))
+		neighbors.add_child(ui._amounts([[{"coins":"coin","supplies":"crate","parts":"build"}.get(str(request.resource),"crate"),int(request.amount)]]))
+		neighbors.add_child(ui._copy("Ricevi",17))
+		neighbors.add_child(ui._amounts(ui.ResourceUI.costs(int(request.coins),int(request.supplies),int(request.parts))))
 		var deliver: Button = ui._button("Consegna ai vicini" if request.ready else "Il prossimo scambio arriva domani",ui._cozy_action.bind("deliver",-1),true)
 		deliver.disabled = not request.ready or not request.affordable
 		neighbors.add_child(deliver)
-	col.add_child(ui._copy("Materiali: %d · Scoperte: %d / 9" % [int(Game.community.parts),Game.community.discoveries.size()],20,ui.SAGE))
+	col.add_child(ui._amounts([["build",int(Game.community.parts)],["discoveries","%d / 9" % Game.community.discoveries.size()]]))
 
 static func visitor(ui: CanvasLayer, id: int) -> void:
 	var v: Dictionary = ui._visitor(id)
@@ -201,8 +206,8 @@ static func visitor(ui: CanvasLayer, id: int) -> void:
 	var info: VBoxContainer = ui._vbox(8)
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	ui._citizen_name(info,c,28)
-	info.add_child(ui._copy("Cibo %d · Beni %d · Servizi %d" % [int(c.food),int(c.goods),int(c.services)],21,ui.SAGE))
-	info.add_child(ui._copy("Sogna di lavorare qui: "+ui._type_name(str(c.dream)),18,ui.GOLD))
+	info.add_child(ui._amounts([["coffee",int(c.food)],["goods",int(c.goods)],["heart",int(c.services)]]))
+	info.add_child(ui._copy("Sogno: "+ui._type_name(str(c.dream)),18,ui.GOLD))
 	info.add_child(ui._copy(str(c.quirk),17))
 	row.add_child(info)
 	col.add_child(row)
@@ -241,7 +246,7 @@ static func visitor(ui: CanvasLayer, id: int) -> void:
 
 static func pause(ui: CanvasLayer) -> void:
 	var col: VBoxContainer = ui._open("pause","Una piccola pausa","IL RIFUGIO TI ASPETTA")
-	heading(ui,col,"Una piccola pausa","Giorno %d · %d abitanti. Tutto il tempo di gioco è fermo." % [Game.day,Game.citizens.size()])
+	col.add_child(ui._amounts([["sun",Game.day],["people",Game.citizens.size()]]))
 	var resume: Button = ui._button("Torniamo al rifugio",ui._resume_from_pause,true)
 	resume.name = "PauseResume"
 	col.add_child(resume)
