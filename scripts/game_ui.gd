@@ -8,6 +8,7 @@ const Typography = preload("res://scripts/typography.gd")
 const ActorVisuals = preload("res://scripts/actor_visuals.gd")
 const HUDIcons = preload("res://scripts/hud_icons.gd")
 const ResourceUI = preload("res://scripts/resource_ui.gd")
+const Workforce = preload("res://scripts/workforce_panel.gd")
 const WeaponIcon = preload("res://scripts/weapon_icon.gd")
 const ProductIcons = preload("res://scripts/product_icons.gd")
 const ExpeditionPanel = preload("res://scripts/expedition_panel.gd")
@@ -18,7 +19,7 @@ const ConstructionPanel = preload("res://scripts/construction_panel.gd")
 const CitizenEquipmentPanel = preload("res://scripts/citizen_equipment_panel.gd")
 const DemolitionPanel = preload("res://scripts/demolition_panel.gd")
 const SurvivorCatalog = preload("res://scripts/survivor_catalog.gd")
-const PURCHASE_PANELS = ["build","building","citizens","citizen_equipment","assignment","job_select","gate","armory","weapon_details","expeditions"]
+const PURCHASE_PANELS = ["build","building","citizens","citizen_equipment","gate","armory","weapon_details","expeditions"]
 
 signal focus_gate
 signal focus_defense
@@ -1178,6 +1179,12 @@ func _update_hud() -> void:
 			_refresh_expedition_if_needed.call_deferred()
 	elif panel_kind == "build" and _last_panel_signature!=_build_catalog_signature():
 		_show_build.call_deferred()
+	elif panel_kind in ["assignment","job_select","citizens"] and _last_panel_signature!=Workforce.signature(Game):
+		_refresh_workforce_if_needed.call_deferred(panel_kind,panel_id)
+
+func _refresh_workforce_if_needed(kind: String, id: int) -> void:
+	if panel_kind!=kind or panel_id!=id: return
+	if _last_panel_signature!=Workforce.signature(Game): _refresh_current()
 
 func _refresh_building_if_needed(id: int) -> void:
 	if panel_kind!="building" or panel_id!=id: return
@@ -1641,7 +1648,7 @@ func _refresh_current() -> void:
 		"job_select": _show_job_select(panel_id)
 
 func _building_signature(b: Dictionary) -> String:
-	var states: Array = [b.workers,Game.is_under_construction(b),b.get("storage_upgraded",false),b.get("auto_shelves",false)]
+	var states: Array = [b.workers,Game._available_workers(b),Game.is_under_construction(b),b.get("storage_upgraded",false),b.get("auto_shelves",false)]
 	for p in b.get("products",[]):
 		states.append(p.get("status","empty"))
 	return JSON.stringify(states)
@@ -1683,38 +1690,14 @@ func _show_building_help(id: int) -> void:
 	_fixed_actions().add_child(_button("Ho capito · Torna all'edificio",_return_to_building.bind(id),true))
 
 func _show_assignment(bid: int) -> void:
-	var b: Dictionary = _building(bid)
-	if Game.is_under_construction(b):
-		show_building(bid)
-		return
-	if b.is_empty(): return
-	var col: VBoxContainer = _open("assignment","La squadra del negozio",b.name.to_upper(),bid)
-	col.add_child(_copy("Scegli fino a 3 lavoratori. Per questo negozio conta l'affinità %s: riduce il tempo dei rifornimenti." % _skill_name(str(b.type))))
-	for c in Game.citizens:
-		var card: VBoxContainer = _card(col,SAGE if c.dream==b.type else BORDER)
-		_citizen_header(card,c)
-		var assigned: bool = int(c.job)==bid
-		var label: String = "Togli dal negozio" if assigned else "Assegna al negozio"
-		var btn: Button = _button(label,_assign.bind(int(c.id),-1 if assigned else bid),not assigned,true)
-		btn.disabled = c.get("away",false) or (not assigned and b.workers.size()>=3)
-		card.add_child(btn)
-	_fixed_actions().add_child(_button("← Torna al negozio",_return_to_building.bind(bid),false,true))
+	Workforce.show_shop(self,bid)
 
 func _assign(cid: int, bid: int) -> void:
 	Game.assign(cid,bid)
 	_refresh_current()
 
 func _citizen_header(parent: Node, c: Dictionary) -> void:
-	var row: HBoxContainer = _hbox(14)
-	parent.add_child(row)
-	row.add_child(_portrait(c,Vector2(78,100)))
-	var info: VBoxContainer = _vbox(2)
-	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_citizen_name(info,c,21)
-	info.add_child(_label(_work_name(c),14,MUTED))
-	info.add_child(_label("Sogno: %s" % _type_name(c.get("dream","cafe")),13,GOLD))
-	row.add_child(info)
-	parent.add_child(_amounts([["coffee",int(c.get("food",1))],["goods",int(c.get("goods",1))],["heart",int(c.get("services",1))],["health",str(int(c.get("hp",100)))+"% salute"]]))
+	Workforce.citizen_header(self,parent,c)
 
 func _portrait(c: Dictionary, dimensions: Vector2) -> PanelContainer:
 	var avatar: PanelContainer = PanelContainer.new()
@@ -1734,6 +1717,7 @@ func _portrait(c: Dictionary, dimensions: Vector2) -> PanelContainer:
 func _show_citizens() -> void:
 	set_selected_tab("citizens")
 	var col: VBoxContainer = _open("citizens","Un rifugio fatto di persone","POPOLAZIONE  /  %d DI %d POSTI" % [Game.citizens.size(),Game.capacity()])
+	_last_panel_signature = Workforce.signature(Game)
 	col.add_child(_copy("%d abitanti · %d letti liberi · vendite +%d%% grazie alla comunità." % [Game.citizens.size(),maxi(0,Game.capacity()-Game.citizens.size()),roundi((Game.community_income_bonus()-1.0)*100)],18,SAGE))
 	var citizen_grid: GridContainer = GridContainer.new()
 	citizen_grid.columns = 2
@@ -1797,23 +1781,11 @@ func _heal(cid: int) -> void:
 	_show_citizens()
 
 func _show_job_select(cid: int) -> void:
-	var citizen: Dictionary = _citizen(cid)
-	if citizen.is_empty(): return
-	var col: VBoxContainer = _open("job_select","Il posto giusto per %s" % citizen.name,"ASSEGNAZIONE LAVORO",cid)
-	for b in Game.buildings:
-		if b.type=="residence" or Game.is_under_construction(b): continue
-		var card: VBoxContainer = _card(col,SAGE if citizen.dream==b.type else BORDER)
-		_title_row(card,b.name,"%d / 3 POSTI" % b.workers.size(),SAGE)
-		card.add_child(_copy("Lavoro ideale: bonus permanente allo stock!" if citizen.dream==b.type else "Ogni lavoratore sblocca un nuovo livello di prodotti.",13,GOLD if citizen.dream==b.type else MUTED))
-		var btn: Button = _button("Già assegnato" if int(citizen.job)==int(b.id) else "Assegna qui",_job_assign.bind(cid,int(b.id)),true,true)
-		btn.disabled = b.workers.size()>=3 or int(citizen.job)==int(b.id)
-		card.add_child(btn)
-	col.add_child(_button("Lascia libero",_job_assign.bind(cid,-1),false,true))
-	_fixed_actions().add_child(_button("← Torna ai cittadini",_return_to_citizens,false,true))
+	Workforce.show_citizen(self,cid)
 
 func _job_assign(cid: int, bid: int) -> void:
 	Game.assign(cid,bid)
-	_return_to_citizens()
+	_show_job_select(cid)
 
 func _show_build() -> void:
 	BuildPanel.show_catalog(self)
@@ -1953,7 +1925,7 @@ func show_help() -> void:
 		["01","Difendi la porta","Tocca uno zombie: la guardia sulla torretta spara solo al tuo comando. La pistola ha munizioni infinite; le altre armi consumano scorte. Più persone sono presenti nel rifugio, più numerosi e frequenti diventano gli arrivi degli zombie. Le persone fuori dalle mura o in spedizione non contano."],
 		["02","Fai entrare la vita","Tocca un superstite e usa Verifica il contagio per sapere con certezza se è sano: è gratis, dura 60 secondi (30 con il Taccuino medico) e non occupa letti. Sporco e graffi da soli non provano il contagio. Accogliere un infiltrato danneggia il cancello e fa comparire un nemico. Gli zombie lasciano in pace chi aspetta fuori; chi viene rifiutato riparte a piedi."],
 		["03","Rimetti in moto i negozi","Apri un edificio e assegna fino a 3 lavoratori. Avvia un rifornimento, attendi e tocca Riempi gli scaffali. Le vendite generano monete nel tempo. Tieni premuto su un edificio o sulla sua insegna per aprire la conferma di demolizione."],
-		["04","Trova il talento giusto","Ogni cittadino ha affinità e un lavoro ideale. Un sognatore al posto giusto aumenta lo stock del negozio. I cittadini lavorano o partono in spedizione; il militare presidia sempre la torretta."],
+		["04","Trova il lavoro giusto","Desiderato indica il lavoro che una persona vorrebbe; Assegnato mostra l'incarico attuale. Le icone sono le stesse dei negozi in città. Assegna una persona libera o trasferiscila da un'altra attività. Il lavoro desiderato sblocca scorte ×2 una sola volta per negozio. Le persone in spedizione conservano il posto e tornano al lavoro al rientro."],
 		["05","Guarda oltre le mura","Le spedizioni recuperano monete, provviste e colpi per la torretta. Esamina una destinazione per confrontare costo, ambiente, tempo e bottino; poi scegli da 1 a 3 cittadini. Alla partenza paghi provviste e consumi i colpi personali indicati. Tutti tornano, ma possono perdere salute e riportare meno risorse."],
 		["06","Una persona, la sua arma","Da Arma e munizioni compri una copia per quel cittadino, con la prima scorta inclusa. Il pompa aiuta negli spazi stretti, la precisione negli spazi aperti e il mitragliatore nelle zone affollate. La pistola è gratuita e ha colpi infiniti. Le scorte personali si comprano separatamente da quelle della torretta; la squadra mostra consumo e probabilità prima della partenza."],
 		["07","Il tuo ritmo","Nei menu gli zombie aspettano mentre produzioni e viaggi proseguono. Orto e officina preparano risorse per il rifugio. I servizi attivi richiedono un lavoratore presente. Dal diario segui quattro capitoli, scopri progetti in ogni destinazione e avvia scambi con i vicini. Puoi osservare gratuitamente una persona dubbia prima di accoglierla."],

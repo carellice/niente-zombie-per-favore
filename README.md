@@ -2,7 +2,9 @@
 
 Un piccolo rifugio. Una grande voglia di ricominciare.
 
-Aggiornamento **0.4.1.45**: [controllo del contagio più chiaro](docs/OSSERVAZIONE_0.4.1.45.md), con spiegazione del rischio, durata reale, conto alla rovescia ed esiti distinti nella scheda dei nuovi arrivati. Il **?** spiega quando e perché osservare.
+Aggiornamento **0.4.1.46**: [assegnazione dei lavori e squadre più chiare](docs/LAVORI_0.4.1.46.md). Desiderato e Assegnato hanno icone distinte; nei negozi trovi squadra, persone disponibili e trasferimenti separati. Comandi e posti si aggiornano dopo la scelta e al rientro dalle spedizioni.
+
+È presente il [controllo del contagio con spiegazione, timer ed esiti](docs/OSSERVAZIONE_0.4.1.45.md) nella scheda dei nuovi arrivati.
 
 Le schermate mantengono [icone e quantità al posto delle scritte ripetute](docs/INTERFACCIA_ICONE_0.4.1.44.md), pulsanti compatti e legenda delle risorse.
 

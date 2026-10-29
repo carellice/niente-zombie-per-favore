@@ -1,7 +1,7 @@
 extends RefCounted
 ## Landscape phone pages: one scroll surface, a narrow control rail and real gutters.
 
-const TITLES = {"armory":"Armeria","weapon_details":"Caratteristiche arma","visitor":"Una porta aperta","citizens":"Cittadini","citizen_equipment":"Equipaggiamento","assignment":"Lavoratori","job_select":"Assegna un lavoro","build":"Costruisci","expeditions":"Spedizioni","demolition":"Demolizione","gate":"Difese del cancello","quests":"Diario del rifugio","help":"Come si gioca","pause":"Pausa","settings":"Impostazioni","credits":"Crediti","reset":"Nuova partita","tutorial_intro":"Benvenuto al rifugio"}
+const TITLES = {"armory":"Armeria","weapon_details":"Caratteristiche arma","visitor":"Una porta aperta","citizens":"Cittadini","citizen_equipment":"Equipaggiamento","assignment":"Squadra del negozio","job_select":"Assegna un lavoro","build":"Costruisci","expeditions":"Spedizioni","demolition":"Demolizione","gate":"Difese del cancello","quests":"Diario del rifugio","help":"Come si gioca","pause":"Pausa","settings":"Impostazioni","credits":"Crediti","reset":"Nuova partita","tutorial_intro":"Benvenuto al rifugio"}
 const ICONS = {"armory":"gun","weapon_details":"gun","visitor":"person","citizens":"people","citizen_equipment":"gun","assignment":"people","job_select":"people","build":"build","expeditions":"compass","demolition":"build","gate":"shield","quests":"journal","help":"help","pause":"pause","settings":"sound","credits":"heart"}
 
 static func open_page(ui: CanvasLayer, kind: String, title: String, id: int, saved_scroll: int, continuing: bool) -> VBoxContainer:

@@ -68,11 +68,7 @@ static func building(ui: CanvasLayer, id: int) -> void:
 		_: production(ui,col,b)
 
 static func production(ui: CanvasLayer, col: Node, b: Dictionary) -> void:
-	var staff: VBoxContainer = ui._card(col)
-	var row: HBoxContainer = ui._hbox(14)
-	row.add_child(ui._copy("Squadra · %d / 3 al lavoro%s" % [Game._available_workers(b)," · Sogno realizzato, scorte ×2" if b.dream_bonus else ""],19,ui.SAGE))
-	row.add_child(ui._button("Gestisci i lavoratori",ui._show_assignment.bind(int(b.id)),false,true))
-	staff.add_child(row)
+	ui.Workforce.overview(ui,col,b)
 	batch(ui,col,int(b.id))
 	for p: Dictionary in b.products:
 		var tier: int = int(p.tier)
