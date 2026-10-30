@@ -90,7 +90,7 @@ static func production(ui: CanvasLayer, col: Node, b: Dictionary) -> void:
 			ui._bind_label(card,func(l: Label) -> void: l.text = "In preparazione · "+ui._time(float(p.remaining)),18,ui.GOLD)
 			var progress: ProgressBar = ui._progress(ui.SAGE)
 			card.add_child(progress)
-			ui.bindings.append([progress,func(v: ProgressBar) -> void: v.value = 100.0*(1.0-float(p.remaining)/float(p.duration))])
+			ui.bindings.append([progress,func(v: ProgressBar) -> void: v.value = 100.0*ui.Activity.product_progress(p)])
 		elif p.status=="ready":
 			card.add_child(ui._button("Riempi gli scaffali  →",ui._restock.bind(int(b.id),tier),true))
 		else:

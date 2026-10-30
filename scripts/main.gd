@@ -15,6 +15,7 @@ const BuildingFeedback = preload("res://scripts/building_feedback.gd")
 const CitizenRoaming = preload("res://scripts/citizen_roaming.gd")
 const ConstructionVisual = preload("res://scripts/construction_visual.gd")
 const BuildingSignage = preload("res://scripts/building_signage.gd")
+const Activity = preload("res://scripts/activity_indicator.gd")
 const CITY_START = 600.0
 const LOT_STEP = 330.0
 const EXPANSION_RECT = Rect2(20.0, -210.0, 240.0, 210.0)
@@ -861,6 +862,10 @@ func _draw() -> void:
 	# The solid checkpoint occludes arrivals at the boundary. Guards stand above it.
 	_draw_gate()
 	_draw_guards()
+	# Medical badges stay above the checkpoint and follow the observed person.
+	for visitor: Dictionary in Game.visitors:
+		if Activity.visitor_visible(visitor):
+			Activity.draw_visitor(self,Game,visitor,BuildingSignage.texture("clinic"))
 	_draw_combat()
 	for p: Dictionary in particles:
 		var color: Color = p.color
@@ -1198,8 +1203,8 @@ func _draw_visitor(visitor: Dictionary, departing: bool, queue_index: int=0) -> 
 		draw_circle(Vector2.ZERO,37.0*_actor_zoom(),Color(0.91,0.47,0.31,flash*0.3))
 		draw_set_transform(Vector2.ZERO)
 	_draw_person(look,0,x,ground+7.0,78*_actor_zoom(),bool(visitor.get("facing_left",departing)),true,float(gait.phase),false,float(gait.blend),str(visitor.citizen.get("appearance","clean")))
-	if (not departing and Game.visitor_at_gate(visitor)) or attacked:
-		var text: String = "MI RIPOSO" if str(visitor.get("observation",""))=="waiting" else "POSSO ENTRARE?"
+	if ((not departing and Game.visitor_at_gate(visitor)) or attacked) and not Activity.visitor_visible(visitor,departing):
+		var text: String = "POSSO ENTRARE?"
 		# Queue slots are closer than a whole speech balloon. Separate their
 		# heights so a neighbour's request never hides a call for help.
 		var bubble_y: float = ground-(100.0+mini(queue_index,2)*34.0)*_actor_zoom()+sin(elapsed*2)*3

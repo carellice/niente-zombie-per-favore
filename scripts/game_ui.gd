@@ -1,4 +1,5 @@
 extends CanvasLayer
+const Activity = preload("res://scripts/activity_indicator.gd")
 
 const CozyPanel = preload("res://scripts/cozy_panel.gd")
 const CozyRules = preload("res://scripts/cozy_rules.gd")
@@ -1924,7 +1925,7 @@ func show_help() -> void:
 	var steps: Array = [
 		["01","Difendi la porta","Tocca uno zombie: la guardia sulla torretta spara solo al tuo comando. La pistola ha munizioni infinite; le altre armi consumano scorte. Più persone sono presenti nel rifugio, più numerosi e frequenti diventano gli arrivi degli zombie. Le persone fuori dalle mura o in spedizione non contano."],
 		["02","Fai entrare la vita","Tocca un superstite e usa Verifica il contagio per sapere con certezza se è sano: è gratis, dura 60 secondi (30 con il Taccuino medico) e non occupa letti. Sporco e graffi da soli non provano il contagio. Accogliere un infiltrato danneggia il cancello e fa comparire un nemico. Gli zombie lasciano in pace chi aspetta fuori; chi viene rifiutato riparte a piedi."],
-		["03","Rimetti in moto i negozi","Apri un edificio e assegna fino a 3 lavoratori. Avvia un rifornimento, attendi e tocca Riempi gli scaffali. Le vendite generano monete nel tempo. Tieni premuto su un edificio o sulla sua insegna per aprire la conferma di demolizione."],
+		["03","Rimetti in moto i negozi","Apri un edificio e assegna fino a 3 lavoratori. Avvia un rifornimento: il cerchio sull'insegna mostra l'avanzamento, in oro se mancano lavoratori. Ogni segmento segue un prodotto. Quando è pronto, tocca Riempi gli scaffali: le vendite generano monete. Tieni premuta l'insegna per la demolizione."],
 		["04","Trova il lavoro giusto","Desiderato indica il lavoro che una persona vorrebbe; Assegnato mostra l'incarico attuale. Le icone sono le stesse dei negozi in città. Assegna una persona libera o trasferiscila da un'altra attività. Il lavoro desiderato sblocca scorte ×2 una sola volta per negozio. Le persone in spedizione conservano il posto e tornano al lavoro al rientro."],
 		["05","Guarda oltre le mura","Le spedizioni recuperano monete, provviste e colpi per la torretta. Esamina una destinazione per confrontare costo, ambiente, tempo e bottino; poi scegli da 1 a 3 cittadini. Alla partenza paghi provviste e consumi i colpi personali indicati. Tutti tornano, ma possono perdere salute e riportare meno risorse."],
 		["06","Una persona, la sua arma","Da Arma e munizioni compri una copia per quel cittadino, con la prima scorta inclusa. Il pompa aiuta negli spazi stretti, la precisione negli spazi aperti e il mitragliatore nelle zone affollate. La pistola è gratuita e ha colpi infiniti. Le scorte personali si comprano separatamente da quelle della torretta; la squadra mostra consumo e probabilità prima della partenza."],

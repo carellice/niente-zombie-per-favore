@@ -2,7 +2,9 @@
 
 Un piccolo rifugio. Una grande voglia di ricominciare.
 
-Aggiornamento **0.4.1.46**: [assegnazione dei lavori e squadre più chiare](docs/LAVORI_0.4.1.46.md). Desiderato e Assegnato hanno icone distinte; nei negozi trovi squadra, persone disponibili e trasferimenti separati. Comandi e posti si aggiornano dopo la scelta e al rientro dalle spedizioni.
+Aggiornamento **0.4.1.47**: [indicatori di preparazione nel villaggio e al cancello](docs/ATTIVITA_0.4.1.47.md). I rifornimenti avanzano intorno all'insegna del negozio; un'icona medica sopra la persona segue il controllo del contagio. I cerchi usano i timer effettivi e si fermano insieme alla preparazione.
+
+Sono presenti [assegnazione dei lavori e squadre più chiare](docs/LAVORI_0.4.1.46.md), con icone distinte per Desiderato e Assegnato, persone disponibili e trasferimenti separati.
 
 È presente il [controllo del contagio con spiegazione, timer ed esiti](docs/OSSERVAZIONE_0.4.1.45.md) nella scheda dei nuovi arrivati.
 

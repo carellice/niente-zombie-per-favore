@@ -719,6 +719,7 @@ func restock(building_id: int, tier: int, quiet: bool=false) -> bool:
 			affinity += float(worker[skill])
 	product["status"] = "restocking"
 	product["remaining"] = float(product["duration"]) * maxf(0.45, 1.0 - affinity * 0.018)
+	product["restock_duration"] = product["remaining"]
 	if not quiet: toast.emit("Produzione avviata: " + product["name"] + ".")
 	if not quiet: sfx.emit("click")
 	if not quiet: _commit()
@@ -1693,6 +1694,7 @@ func _valid_save(data: Dictionary) -> bool:
 				return false
 			if not str(product["status"]) in ["empty", "restocking", "ready", "stocked"] or float(product["sell_interval"]) <= 0.0:
 				return false
+			if product.has("restock_duration") and (not _finite_number(product.restock_duration) or float(product.restock_duration)<=0.0 or float(product.restock_duration)>86400.0): return false
 			if remaining>0.0 and (product["status"]!="empty" or int(product["stock"])!=0): return false
 	var saved_expedition = data.get("expedition", {"status": "idle"})
 	if not saved_expedition is Dictionary or not saved_expedition.get("status", "idle") in ["idle", "running", "ready"]:

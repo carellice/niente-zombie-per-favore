@@ -53,7 +53,7 @@ static func show_card(ui: CanvasLayer, parent: Node, visitor: Dictionary) -> voi
 	var details: VBoxContainer = ui._vbox(8)
 	details.name = "ObservationExplanation"
 	details.add_child(ui._copy("Sporco e graffi possono esserci anche sulle persone sane. Il controllo dà un esito certo.",17))
-	details.add_child(ui._copy("È gratuito, per una persona alla volta. Non occupa letti e puoi continuare a giocare durante l'attesa.",17))
+	details.add_child(ui._copy("È gratuito, per una persona alla volta. Non occupa letti: puoi continuare a giocare e seguire il cerchio sopra la persona.",17))
 	var help: Button = ui._icon_button("help",func() -> void: details.visible = not details.visible,"A cosa serve l'osservazione?")
 	help.name = "ObservationHelp"
 	header.add_child(help)

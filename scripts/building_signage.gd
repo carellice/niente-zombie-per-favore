@@ -1,6 +1,7 @@
 extends RefCounted
 ## Recognisable painted shop emblems, reusing the game's filtered illustrations.
 const Icons = preload("res://scripts/hud_icons.gd")
+const Activity = preload("res://scripts/activity_indicator.gd")
 const SYMBOLS = {"residence":"home","cafe":"coffee","garden":"vegetables","workshop":"tools","clinic":"medkit","bakery":"bread","waterworks":"water","tailor":"cloth"}
 static var _textures: Dictionary = {}
 static var _styles: Dictionary = {}
@@ -69,3 +70,6 @@ static func draw_sign(scene: Control, building: Dictionary) -> void:
 	var factor: float = minf(content.size.x/art.get_width(),content.size.y/art.get_height())
 	var dimensions: Vector2 = art.get_size()*factor
 	scene.draw_texture_rect(art,Rect2(content.get_center()-dimensions*0.5,dimensions),false)
+	var tasks: Array[Dictionary] = Activity.preparations(scene.get_node("/root/Game"),building)
+	Activity.draw_ring(scene,rect,tasks)
+	Activity.draw_preparation_badge(scene,rect,tasks)
