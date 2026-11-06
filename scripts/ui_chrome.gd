@@ -56,6 +56,54 @@ static func decorate_button(button: Button) -> void:
 		tween.tween_property(ink,"amount",0.0,0.20).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	)
 
+static var _frosted: ShaderMaterial
+
+## Vertical fade used for soft cinematic edges instead of hard tinted bands.
+static func fade_texture(top: Color, bottom: Color) -> GradientTexture2D:
+	var gradient: Gradient = Gradient.new()
+	gradient.set_color(0,top)
+	gradient.set_color(1,bottom)
+	gradient.interpolation_mode = Gradient.GRADIENT_INTERPOLATE_CUBIC
+	var texture: GradientTexture2D = GradientTexture2D.new()
+	texture.gradient = gradient
+	texture.width = 4
+	texture.height = 128
+	texture.fill_from = Vector2(0,0)
+	texture.fill_to = Vector2(0,1)
+	return texture
+
+static func fade_rect(top: Color, bottom: Color, anchor_top: float, anchor_bottom: float) -> TextureRect:
+	var rect: TextureRect = TextureRect.new()
+	rect.texture = fade_texture(top,bottom)
+	rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	rect.stretch_mode = TextureRect.STRETCH_SCALE
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rect.anchor_left = 0
+	rect.anchor_right = 1
+	rect.anchor_top = anchor_top
+	rect.anchor_bottom = anchor_bottom
+	return rect
+
+## Frosted glass behind desktop dialogs: the village stays readable as context.
+static func frosted_material() -> ShaderMaterial:
+	if _frosted == null:
+		var shader: Shader = Shader.new()
+		shader.code = """shader_type canvas_item;
+uniform sampler2D screen: hint_screen_texture, filter_linear;
+uniform float radius = 2.6;
+void fragment() {
+	vec3 sum = vec3(0.0);
+	for (int x = -2; x <= 2; x++) {
+		for (int y = -2; y <= 2; y++) {
+			sum += texture(screen, SCREEN_UV + vec2(float(x), float(y)) * SCREEN_PIXEL_SIZE * radius).rgb;
+		}
+	}
+	COLOR = vec4(mix(sum / 25.0, COLOR.rgb, COLOR.a), 1.0);
+}"""
+		_frosted = ShaderMaterial.new()
+		_frosted.shader = shader
+	return _frosted
+
 static func reveal(parent: Control) -> void:
 	if Preferences.reduced_motion: return
 	var index: int = 0

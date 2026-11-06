@@ -1,8 +1,16 @@
-# Niente Zombie Per Favore!
+<p align="center">
+  <img src="assets/icon.png" alt="Icona di Niente Zombie Per Favore!" width="160">
+</p>
 
-Un piccolo rifugio. Una grande voglia di ricominciare.
+<h1 align="center">Niente Zombie Per Favore!</h1>
 
-Aggiornamento **0.4.1.47**: [indicatori di preparazione nel villaggio e al cancello](docs/ATTIVITA_0.4.1.47.md). I rifornimenti avanzano intorno all'insegna del negozio; un'icona medica sopra la persona segue il controllo del contagio. I cerchi usano i timer effettivi e si fermano insieme alla preparazione.
+<p align="center">Un piccolo rifugio. Una grande voglia di ricominciare.</p>
+
+<p align="center"><a href="https://github.com/carellice/niente-zombie-per-favore/releases/latest"><b>Scarica l'ultima versione</b></a> · setup Windows e APK Android</p>
+
+Aggiornamento **0.4.1.48**: [aggiornamenti dal gioco e rifinitura grafica](docs/AGGIORNAMENTI_0.4.1.48.md). Il menu principale mostra la versione installata e, quando su GitHub c'è una release più recente, il pulsante **Aggiorna** (Windows) o **Scarica** (Android). Il cielo del villaggio usa una sfumatura morbida al posto della banda scura, i dialoghi su PC hanno uno sfondo a vetro smerigliato e il menu ha un panorama in lento movimento.
+
+Aggiornamento 0.4.1.47: [indicatori di preparazione nel villaggio e al cancello](docs/ATTIVITA_0.4.1.47.md). I rifornimenti avanzano intorno all'insegna del negozio; un'icona medica sopra la persona segue il controllo del contagio. I cerchi usano i timer effettivi e si fermano insieme alla preparazione.
 
 Sono presenti [assegnazione dei lavori e squadre più chiare](docs/LAVORI_0.4.1.46.md), con icone distinte per Desiderato e Assegnato, persone disponibili e trasferimenti separati.
 
@@ -68,7 +76,7 @@ Salvataggio automatico e alla chiusura, caricamento validato e produzione offlin
 
 La simulazione in **game_state.gd** è separata da visualizzazione e puntamento in **main.gd** e dall'interfaccia in **game_ui.gd**. Il viewport orizzontale scala con la finestra; i pannelli scorrono, i bersagli hanno aree di selezione generose e il gioco non richiede hover o tastiera. L'interfaccia conserva lo stile giocattoloso con elementi grandi e arrotondati.
 
-Su Android lo schermo intero è automatico e il paesaggio si espande al formato del dispositivo. Solo sugli smartphone Android lo sfondo dei dialoghi occupa l'intero display, con contenuti distanziati dai bordi e dal notch, e gli sprite sono ingranditi indipendentemente dalla telecamera: la vista iniziale mostra edifici e torretta per intero in altezza, con scorrimento esclusivamente orizzontale e zoom aggiuntivo volontario; PC e tablet conservano le dimensioni precedenti. L'interfaccia dedicata usa una scala compatta: contatori della larghezza necessaria, navigazione centrata in basso, pulsanti separati e margini per notch e barre di sistema. Il BAT produce un APK firmato con puntamento touch emulato. Prima della pubblicazione sugli store serviranno prove su dispositivi reali, sospensione e ripresa, prestazioni e accessibilità; iOS richiede una pipeline dedicata. Non sono inclusi acquisti reali, pubblicità o servizi online. La valuta rara si guadagna giocando. Note in [MOBILE.md](docs/MOBILE.md) e [verifiche del layout](docs/VERIFICHE_MOBILE.md).
+Su Android lo schermo intero è automatico e il paesaggio si espande al formato del dispositivo. Solo sugli smartphone Android lo sfondo dei dialoghi occupa l'intero display, con contenuti distanziati dai bordi e dal notch, e gli sprite sono ingranditi indipendentemente dalla telecamera: la vista iniziale mostra edifici e torretta per intero in altezza, con scorrimento esclusivamente orizzontale e zoom aggiuntivo volontario; PC e tablet conservano le dimensioni precedenti. L'interfaccia dedicata usa una scala compatta: contatori della larghezza necessaria, navigazione centrata in basso, pulsanti separati e margini per notch e barre di sistema. Il BAT produce un APK firmato con puntamento touch emulato. Prima della pubblicazione sugli store serviranno prove su dispositivi reali, sospensione e ripresa, prestazioni e accessibilità; iOS richiede una pipeline dedicata. Non sono inclusi acquisti reali o pubblicità; l'unico accesso a internet è il controllo facoltativo degli aggiornamenti su GitHub, e il gioco resta completo anche offline. La valuta rara si guadagna giocando. Note in [MOBILE.md](docs/MOBILE.md) e [verifiche del layout](docs/VERIFICHE_MOBILE.md).
 
 La nuova interfaccia usa verde profondo, carta chiara, griglie adattive, pulsanti separati e sezioni leggibili. Aperture progressive, chiusure morbide e feedback sui pulsanti mantengono stabili le aree di tocco. Da Impostazioni puoi ridurre le nuove animazioni e l’inerzia. Sugli smartphone titolo, saldi e azioni scorrono nella stessa pagina, con controllo laterale e margini per notch e bordi. Su PC e tablet restano disponibili le finestre con le azioni principali separate. Le spedizioni seguono **Destinazione → Dettagli → Squadra**, conservando le scelte quando si torna indietro. Le costruzioni usano schede uniformi con illustrazione, funzione e pulsante sempre in fondo. L'armeria offre schede compatte e dettagli apribili toccando l'arma. Da **Impostazioni → Dimensione interfaccia** puoi scegliere **Compatta, Media o Grande**, anche su computer. Al cancello compaiono arma, colpi e recupero; nel villaggio le scorciatoie mostrano prodotti pronti, rifornimenti da avviare e stato delle spedizioni.
 

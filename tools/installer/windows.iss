@@ -67,6 +67,8 @@ Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#GameExe}"; WorkingDir: "{ap
 
 [Run]
 Filename: "{app}\{#GameExe}"; WorkingDir: "{app}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall skipifsilent
+; In-game updates run the setup with /SILENT: relaunch the upgraded game.
+Filename: "{app}\{#GameExe}"; WorkingDir: "{app}"; Flags: nowait skipifnotsilent
 
 ; No AppData deletion: Godot save games and preferences survive upgrades and
 ; uninstallation. Inno removes only files registered by this installer.

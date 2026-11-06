@@ -207,6 +207,9 @@ static func main_menu(ui: CanvasLayer) -> void:
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		group.add_child(label)
 		grid.add_child(button)
+	var update_card: PanelContainer = ui.UpdateCard.new()
+	update_card.setup(ui,true)
+	choices.add_child(update_card)
 	ui._layout_menu()
 	ui._apply_mobile_controls.call_deferred()
 	ui.Chrome.reveal(choices)

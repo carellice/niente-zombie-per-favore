@@ -15,6 +15,7 @@ const ProductIcons = preload("res://scripts/product_icons.gd")
 const ExpeditionPanel = preload("res://scripts/expedition_panel.gd")
 const ArmoryPanel = preload("res://scripts/armory_panel.gd")
 const PhonePages = preload("res://scripts/phone_pages.gd")
+const UpdateCard = preload("res://scripts/update_card.gd")
 const BuildPanel = preload("res://scripts/build_panel.gd")
 const ConstructionPanel = preload("res://scripts/construction_panel.gd")
 const CitizenEquipmentPanel = preload("res://scripts/citizen_equipment_panel.gd")
@@ -556,7 +557,7 @@ func _layout_menu() -> void:
 	if DeviceLayout.android_phone():
 		_menu_hero.visible = safe.size.x>=800
 		_menu_hero.custom_minimum_size.x = 280 if _menu_hero.visible else 0
-		_menu_cabinet.custom_minimum_size = Vector2(minf(440,safe.size.x-48),360)
+		_menu_cabinet.custom_minimum_size = Vector2(minf(440,safe.size.x-48),minf(470,safe.size.y-32))
 		_menu_margin.add_theme_constant_override("margin_left",ceili(safe.position.x)+28)
 		_menu_margin.add_theme_constant_override("margin_right",ceili(root.size.x-safe.end.x)+28)
 
@@ -1330,7 +1331,8 @@ func _open(kind: String, title: String, subtitle: String = "DOSSIER DEL RIFUGIO"
 	modal.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.add_child(modal)
 	var shade: ColorRect = ColorRect.new()
-	shade.color = Color(.10,.12,.10,.70)
+	shade.color = Color(.09,.13,.11,.52)
+	shade.material = Chrome.frosted_material()
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	modal.add_child(shade)
 	_modal_shade = shade
@@ -1962,9 +1964,18 @@ func show_main_menu() -> void:
 	menu_layer.add_child(background)
 	var shade: ColorRect = ColorRect.new()
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	shade.color = Color(.08,.24,.16,.24)
+	shade.color = Color(.08,.24,.16,.16)
 	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	menu_layer.add_child(shade)
+	# Soft sky and ground fades give the title depth and keep text readable.
+	menu_layer.add_child(Chrome.fade_rect(Color(.06,.10,.10,.42),Color(.06,.10,.10,0),0.0,0.32))
+	menu_layer.add_child(Chrome.fade_rect(Color(.05,.13,.11,0),Color(.04,.10,.08,.78),0.55,1.0))
+	if not Preferences.reduced_motion:
+		# A slow drift keeps the panorama alive without competing with the buttons.
+		background.resized.connect(func() -> void: background.pivot_offset = background.size*Vector2(0.62,0.45))
+		var drift: Tween = background.create_tween().set_loops()
+		drift.tween_property(background,"scale",Vector2.ONE*1.07,22.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		drift.tween_property(background,"scale",Vector2.ONE,22.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	if DeviceLayout.android_phone():
 		PhonePages.main_menu(self)
 		return
@@ -2063,6 +2074,9 @@ func show_main_menu() -> void:
 	var footer: Label = _copy("Ogni piccolo passo conta.\nI tuoi progressi si salvano automaticamente.",13,CREAM)
 	footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	choices.add_child(footer)
+	var update_card: PanelContainer = UpdateCard.new()
+	update_card.setup(self,false)
+	choices.add_child(update_card)
 	if DeviceLayout.mobile:
 		footer.hide()
 		_layout_menu()

@@ -16,6 +16,9 @@ const CitizenRoaming = preload("res://scripts/citizen_roaming.gd")
 const ConstructionVisual = preload("res://scripts/construction_visual.gd")
 const BuildingSignage = preload("res://scripts/building_signage.gd")
 const Activity = preload("res://scripts/activity_indicator.gd")
+const Chrome = preload("res://scripts/ui_chrome.gd")
+var _sky_fade: Texture2D = Chrome.fade_texture(Color(0.07,0.12,0.13,0.34),Color(0.07,0.12,0.13,0.0))
+var _ground_fade: Texture2D = Chrome.fade_texture(Color(0.04,0.08,0.08,0.0),Color(0.04,0.08,0.08,0.42))
 const CITY_START = 600.0
 const LOT_STEP = 330.0
 const EXPANSION_RECT = Rect2(20.0, -210.0, 240.0, 210.0)
@@ -848,8 +851,8 @@ func _draw() -> void:
 		draw_texture_rect(background, Rect2(bg_x, background_top, background_width, bottom-background_top), false)
 	else:
 		draw_rect(Rect2(0, background_top, size.x, bottom-background_top), Color("858f83"))
-	# A gentle atmospheric vignette joins illustrated world and interface.
-	draw_rect(Rect2(0, 112, size.x, 70), Color(0.09, 0.15, 0.15, 0.10))
+	# Soft sky fade keeps the HUD readable without a visible band.
+	draw_texture_rect(_sky_fade, Rect2(0, 0, size.x, 210), false)
 	_draw_road()
 	_draw_boundary()
 	for building: Dictionary in Game.buildings:
@@ -871,6 +874,8 @@ func _draw() -> void:
 		var color: Color = p.color
 		color.a = clampf(float(p.life), 0.0, 1.0)
 		_text(Vector2(_sx(float(p.x)), float(p.y)), str(p.text), 23, color, heading, true)
+	# Ground fade settles the footer onto the road like a camera vignette.
+	draw_texture_rect(_ground_fade, Rect2(0, bottom-180.0, size.x, 180.0), false)
 	_draw_scene_labels()
 	# Ambient drifting dust in front of the scene, never in the HUD.
 	for i: int in range(22):
